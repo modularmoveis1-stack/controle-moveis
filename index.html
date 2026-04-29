@@ -272,6 +272,36 @@ input[type="date"] { font-family: var(--mono); }
   .main { margin-left: 56px; }
   #detailPanel { width: 100%; }
 }
+
+/* ── LOGIN ───────────────────────────────────────────── */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 600;
+  background: radial-gradient(circle at 30% 20%, rgba(79,123,255,0.10), transparent 60%), var(--bg);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+#loginScreen.hidden { display: none; }
+.login-card {
+  width: 100%; max-width: 360px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 32px 28px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.login-logo { margin-bottom: 24px; }
+.login-logo h2 { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+.login-logo p { font-size: 12px; color: var(--text3); }
+.login-form { display: flex; flex-direction: column; gap: 14px; }
+.login-form label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.login-form input { padding: 10px 12px; font-size: 13px; margin-top: 5px; }
+.login-msg { font-size: 12px; min-height: 16px; color: var(--red); }
+.login-user-badge {
+  display: flex; align-items: center; gap: 10px;
+}
+.login-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent-dim); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -333,6 +363,37 @@ input[type="date"] { font-family: var(--mono); }
   </div>
 </div>
 
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h2>Controle de Projetos</h2>
+      <p>Móveis Sob Medida — Entre para acessar</p>
+    </div>
+    <div class="login-form">
+      <div>
+        <label>Seu nome</label>
+        <select id="login_usuario" style="margin-top:5px">
+          <option value="">Selecione...</option>
+          <option value="Jean">Jean</option>
+          <option value="Adriana">Adriana</option>
+          <option value="Lucas">Lucas</option>
+          <option value="Marlony">Marlony</option>
+          <option value="Mateus">Mateus</option>
+          <option value="Helder">Helder</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label>Senha</label>
+        <input type="password" id="login_senha" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div class="login-msg" id="login_msg"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="fazerLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sidebar-logo">
@@ -365,6 +426,11 @@ input[type="date"] { font-family: var(--mono); }
   <div class="topbar">
     <span class="topbar-title" id="pageTitle">Dashboard</span>
     <div id="syncStatus" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></div>
+    <div class="login-user-badge" id="userBadge" style="display:none">
+      <div class="login-avatar" id="userAvatar">?</div>
+      <span style="font-size:12px;color:var(--text2)" id="userLabel"></span>
+      <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="fazerLogout()">Sair</button>
+    </div>
     <button class="btn btn-ghost" style="font-size:12px" onclick="reloadData()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
       Atualizar
@@ -1269,14 +1335,73 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+// ── SISTEMA DE LOGIN ──────────────────────────────────────
+// Para trocar senhas: edite o objeto abaixo
+const USUARIOS = {
+  'Jean':    'jean123',
+  'Adriana': 'adriana123',
+  'Lucas':   'lucas123',
+  'Marlony': 'marlony123',
+  'Mateus':  'mateus123',
+  'Helder':  'helder123',
+  'Admin':   'moveis2024',
+};
+
+let usuarioLogado = null;
+
+function fazerLogin() {
+  const usuario = document.getElementById('login_usuario').value;
+  const senha = document.getElementById('login_senha').value;
+  const msg = document.getElementById('login_msg');
+
+  if (!usuario) { msg.textContent = 'Selecione seu nome.'; return; }
+  if (!senha) { msg.textContent = 'Digite sua senha.'; return; }
+
+  if (USUARIOS[usuario] && USUARIOS[usuario] === senha) {
+    usuarioLogado = usuario;
+    sessionStorage.setItem('usuario', usuario);
+    msg.textContent = '';
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('userBadge').style.display = 'flex';
+    document.getElementById('userLabel').textContent = usuario;
+    document.getElementById('userAvatar').textContent = usuario.charAt(0).toUpperCase();
+    loadCfg();
+    if (!hasCfg()) { openSetup(); showLoading(false); }
+    else { closeSetup(); init(); }
+  } else {
+    msg.textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('login_senha').value = '';
+    document.getElementById('login_senha').focus();
+  }
+}
+
+function fazerLogout() {
+  usuarioLogado = null;
+  sessionStorage.removeItem('usuario');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('login_senha').value = '';
+  document.getElementById('login_msg').textContent = '';
+  DB = [];
+  renderDashboard();
+  renderProjetos();
+}
+
 // ── BOOTSTRAP ─────────────────────────────────────────────
-loadCfg();
-if (!hasCfg()) {
-  openSetup();
-  showLoading(false);
+// Verificar se já estava logado nesta sessão
+const sessaoUsuario = sessionStorage.getItem('usuario');
+if (sessaoUsuario && USUARIOS[sessaoUsuario]) {
+  usuarioLogado = sessaoUsuario;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('userBadge').style.display = 'flex';
+  document.getElementById('userLabel').textContent = sessaoUsuario;
+  document.getElementById('userAvatar').textContent = sessaoUsuario.charAt(0).toUpperCase();
+  loadCfg();
+  if (!hasCfg()) { openSetup(); showLoading(false); }
+  else { closeSetup(); init(); }
 } else {
-  closeSetup();
-  init();
+  // Mostrar tela de login
+  showLoading(false);
 }
 renderDashboard();
 </script>
