@@ -742,7 +742,9 @@ function hasCfg() { return CFG.offlineMode || (CFG.url && CFG.sheetId); }
 // ── DIAS ÚTEIS ──────────────────────────────────────────
 function addWorkdays(dateStr, days) {
   if (!dateStr) return null;
-  let d = new Date(dateStr + 'T12:00:00');
+  const iso = toISO ? toISO(dateStr) : dateStr;
+  if (!iso) return null;
+  let d = new Date(iso + 'T12:00:00');
   let added = 0, dir = days > 0 ? 1 : -1, abs = Math.abs(days);
   while (added < abs) {
     d.setDate(d.getDate() + dir);
@@ -753,7 +755,9 @@ function addWorkdays(dateStr, days) {
 }
 function networkDays(a, b) {
   if (!a || !b) return null;
-  let d1 = new Date(a + 'T12:00:00'), d2 = new Date(b + 'T12:00:00');
+  const ia = toISO(a), ib = toISO(b);
+  if (!ia || !ib) return null;
+  let d1 = new Date(ia + 'T12:00:00'), d2 = new Date(ib + 'T12:00:00');
   if (d1 > d2) [d1, d2] = [d2, d1];
   let count = 0, cur = new Date(d1);
   while (cur <= d2) {
@@ -765,14 +769,44 @@ function networkDays(a, b) {
 }
 function fmt(str) {
   if (!str) return '—';
-  const [y, m, d] = str.split('-');
-  return `${d}/${m}/${y}`;
+  // Formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const [y, m, d] = str.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  // Formato completo do Google Sheets (ex: "Tue Apr 28 2026 00:00:00 GMT-0300")
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const mon = String(d.getMonth() + 1).padStart(2, '0');
+      const yr = d.getFullYear();
+      return `${day}/${mon}/${yr}`;
+    }
+  } catch(e) {}
+  return '—';
+}
+
+function toISO(str) {
+  if (!str) return null;
+  // Já está no formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.split('T')[0];
+  // Formato completo do Google Sheets
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  } catch(e) {}
+  return null;
 }
 function today() { return new Date().toISOString().split('T')[0]; }
 function diffDays(prazo) {
   if (!prazo) return null;
+  const ip = toISO(prazo);
+  if (!ip) return null;
   const t = new Date(today() + 'T12:00:00');
-  const p = new Date(prazo + 'T12:00:00');
+  const p = new Date(ip + 'T12:00:00');
   return Math.round((p - t) / 86400000);
 }
 
@@ -1187,10 +1221,11 @@ function openDetail(id) {
       <div class="detail-section-header">${title}</div>
       ${steps.map(s => {
         const isFormula = s.formula;
-        const val = p[s.key] || '';
-        const prevVal = s.prev ? p[s.prev] || '' : '';
-        const isLate = !val && s.prev && p[s.prev] && p[s.prev] < today();
-        const dotCls = val ? 'dot-ok' : isLate ? 'dot-late' : prevVal && prevVal < today() ? 'dot-warn' : 'dot-pend';
+        const rawVal = p[s.key] || '';
+        const val = rawVal ? (toISO(rawVal) || '') : '';
+        const prevVal = s.prev ? (p[s.prev] || '') : '';
+        const isLate = !val && s.prev && p[s.prev] && toISO(p[s.prev]) < today();
+        const dotCls = val ? 'dot-ok' : isLate ? 'dot-late' : prevVal && toISO(prevVal) < today() ? 'dot-warn' : 'dot-pend';
         return `<div class="step-row">
           <div class="step-dot ${dotCls}"></div>
           <div class="step-label">${s.label}</div>
