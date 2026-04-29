@@ -711,12 +711,28 @@ input[type="date"] { font-family: var(--mono); }
 // CONFIGURAÇÃO — Google Sheets via Apps Script
 // ══════════════════════════════════════════════════════════════
 const CFG_KEY = 'moveis_cfg_v1';
-let CFG = { url: '', sheetId: '', offlineMode: false };
+// ── CONFIGURAÇÃO FIXA — não precisa configurar em cada navegador ──
+const CFG_PADRAO = {
+  url: 'https://script.google.com/macros/s/AKfycbyuhn0u8E9YhkE05n6nigZdVjvWkREYsJadZBdWKfW0EPuv-tNyKIQipimd1WvgPCjsZg/exec',
+  sheetId: '1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg',
+  offlineMode: false
+};
+let CFG = { ...CFG_PADRAO };
 let DB = [];
 let nextId = 1;
 
 function loadCfg() {
-  try { const s = localStorage.getItem(CFG_KEY); if (s) CFG = JSON.parse(s); } catch {}
+  try {
+    const s = localStorage.getItem(CFG_KEY);
+    if (s) {
+      const saved = JSON.parse(s);
+      // Só usa configuração salva se tiver URL válida, senão usa a padrão
+      if (saved.url && saved.sheetId) CFG = saved;
+      else CFG = { ...CFG_PADRAO };
+    } else {
+      CFG = { ...CFG_PADRAO };
+    }
+  } catch { CFG = { ...CFG_PADRAO }; }
 }
 function saveCfg() {
   localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
