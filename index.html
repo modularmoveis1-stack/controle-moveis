@@ -569,6 +569,14 @@ input[type="date"] { font-family: var(--mono); }
                 <input type="date" id="n_exec_final" oninput="calcPreviews()">
               </div>
               <div class="step-input-item">
+                <label>Enviou para aprovação do cliente</label>
+                <input type="date" id="n_aprovacao_enviou">
+              </div>
+              <div class="step-input-item">
+                <label>Cliente aprovou</label>
+                <input type="date" id="n_aprovacao_cliente">
+              </div>
+              <div class="step-input-item">
                 <label>Início do Ajuste</label>
                 <input type="date" id="n_ajuste_inicio">
               </div>
@@ -633,10 +641,6 @@ input[type="date"] { font-family: var(--mono); }
               <div class="step-input-item">
                 <label>Agendamento Real (Agenda de Entrega)</label>
                 <input type="date" id="n_agenda_entrega" oninput="calcPreviews()">
-              </div>
-              <div class="step-input-item" style="grid-column:1/-1">
-                <label>Equipe Responsável</label>
-                <input type="text" id="n_equipe" placeholder="Ex: Tadeu e Lucas">
               </div>
               <div class="step-input-item">
                 <label>Início da Montagem</label>
@@ -711,7 +715,6 @@ input[type="date"] { font-family: var(--mono); }
 // CONFIGURAÇÃO — Google Sheets via Apps Script
 // ══════════════════════════════════════════════════════════════
 const CFG_KEY = 'moveis_cfg_v1';
-// ── CONFIGURAÇÃO FIXA — não precisa configurar em cada navegador ──
 const CFG_PADRAO = {
   url: 'https://script.google.com/macros/s/AKfycbxsxPyjW7JwadAfySUwcld8hFNYOB-M-f9x6fhYjATeyrxre3YvXm8lNQkT5m0ugjnnUA/exec',
   sheetId: '1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg',
@@ -726,7 +729,6 @@ function loadCfg() {
     const s = localStorage.getItem(CFG_KEY);
     if (s) {
       const saved = JSON.parse(s);
-      // Só usa configuração salva se tiver URL válida, senão usa a padrão
       if (saved.url && saved.sheetId) CFG = saved;
       else CFG = { ...CFG_PADRAO };
     } else {
@@ -769,12 +771,10 @@ function networkDays(a, b) {
 }
 function fmt(str) {
   if (!str) return '—';
-  // Formato YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
     const [y, m, d] = str.split('-');
     return `${d}/${m}/${y}`;
   }
-  // Formato completo do Google Sheets (ex: "Tue Apr 28 2026 00:00:00 GMT-0300")
   try {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
@@ -789,9 +789,7 @@ function fmt(str) {
 
 function toISO(str) {
   if (!str) return null;
-  // Já está no formato YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.split('T')[0];
-  // Formato completo do Google Sheets
   try {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
@@ -813,11 +811,11 @@ function diffDays(prazo) {
 // ── API GOOGLE SHEETS ─────────────────────────────────────
 const FIELDS = ['id','cliente','ambiente','consultor','fechamento','prazo_dias','prazo',
   'prev_medicao','medicao_real','exec_pegou','exec_listagem','prev_executivo','exec_final',
+  'aprovacao_enviou','aprovacao_cliente',
   'ajuste_inicio','prev_ajuste','ajuste_fim','sep_lista','comprar','prev_material','conferir',
   'corte_inicio','fitamento','disp_adriana','prev_agendamento','agenda_entrega','equipe',
   'montagem_inicio','montagem_entregue','criado'];
 
-// Offline storage (localStorage fallback)
 function localLoad() {
   try {
     const raw = localStorage.getItem('moveis_projetos_v1');
@@ -1059,6 +1057,8 @@ async function salvarProjeto() {
     exec_listagem: document.getElementById('n_exec_listagem').value || null,
     prev_executivo: addWorkdays(med || addWorkdays(fech,5), 5),
     exec_final: execF || null,
+    aprovacao_enviou: document.getElementById('n_aprovacao_enviou').value || null,
+    aprovacao_cliente: document.getElementById('n_aprovacao_cliente').value || null,
     ajuste_inicio: document.getElementById('n_ajuste_inicio').value || null,
     prev_ajuste: addWorkdays(execF || addWorkdays(med||addWorkdays(fech,5),5), 5),
     ajuste_fim: ajF || null,
@@ -1071,7 +1071,7 @@ async function salvarProjeto() {
     disp_adriana: dispAdr || null,
     prev_agendamento: dispAdr ? addWorkdays(dispAdr, 10) : null,
     agenda_entrega: document.getElementById('n_agenda_entrega').value || null,
-    equipe: document.getElementById('n_equipe').value.trim() || null,
+    equipe: null,
     montagem_inicio: document.getElementById('n_montagem_inicio').value || null,
     montagem_entregue: document.getElementById('n_montagem_entregue').value || null,
     criado: today(),
@@ -1221,8 +1221,9 @@ function openDetail(id) {
       <div class="detail-section-header">${title}</div>
       ${steps.map(s => {
         const isFormula = s.formula;
+        const isText = s.type === 'text';
         const rawVal = p[s.key] || '';
-        const val = rawVal ? (toISO(rawVal) || '') : '';
+        const val = isText ? rawVal : (rawVal ? (toISO(rawVal) || '') : '');
         const prevVal = s.prev ? (p[s.prev] || '') : '';
         const isLate = !val && s.prev && p[s.prev] && toISO(p[s.prev]) < today();
         const dotCls = val ? 'dot-ok' : isLate ? 'dot-late' : prevVal && toISO(prevVal) < today() ? 'dot-warn' : 'dot-pend';
@@ -1233,7 +1234,9 @@ function openDetail(id) {
           <div class="step-real">
             ${isFormula
               ? `<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`
-              : `<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`
+              : isText
+                ? `<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`
+                : `<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`
             }
           </div>
         </div>`;
@@ -1242,7 +1245,7 @@ function openDetail(id) {
 
   document.getElementById('dp-body').innerHTML =
     `<div class="detail-section" style="margin-bottom:12px;border-color:rgba(79,123,255,0.3)">
-      <div class="detail-section-header" style="background:rgba(79,123,255,0.15);color:var(--accent)">🤝 Negociação (Jean)</div>
+      <div class="detail-section-header" style="background:rgba(79,123,255,0.15);color:var(--accent)">🤝 Negociação <span style="font-size:10px;opacity:0.8">(JEAN)</span></div>
       <div class="step-row">
         <div class="step-label">Data de Fechamento</div>
         <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(p.fechamento)}</span>
@@ -1256,33 +1259,36 @@ function openDetail(id) {
         <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo ? (diff<0?'var(--red)':diff<=10?'var(--yellow)':'var(--green)') : 'var(--text3)'}">${p.prazo ? fmt(p.prazo) : (p.medicao_real ? '—' : '⏳ aguarda medição')}</span>
       </div>
     </div>` +
-    makeSection('ds-agenda', '📅 Agenda', [
+    makeSection('ds-agenda', '📅 Agenda <span style="font-size:10px;opacity:0.8">(ADRIANA)</span>', [
       { label:'Previsão Medição (+5du)', key:'prev_medicao', formula:true },
       { label:'Medição Final Real', key:'medicao_real' },
     ]) +
-    makeSection('ds-exec', '📐 Execução de Projeto Técnico', [
+    makeSection('ds-exec', '📐 Execução de Projeto Técnico <span style="font-size:10px;opacity:0.8">(LUCAS / MARLONY)</span>', [
       { label:'Executivo Pegou', key:'exec_pegou' },
       { label:'Executivo Entregou — Listagem', key:'exec_listagem' },
       { label:'Previsão Executivo (Med+5du)', key:'prev_executivo', formula:true },
       { label:'Executivo Entregou — Finalizado', key:'exec_final' },
+      { label:'Enviou para aprovação do cliente', key:'aprovacao_enviou' },
+      { label:'Cliente aprovou', key:'aprovacao_cliente' },
       { label:'Início do Ajuste', key:'ajuste_inicio' },
       { label:'Previsão Ajuste (Exec+5du)', key:'prev_ajuste', formula:true },
       { label:'Fim do Ajuste', key:'ajuste_fim' },
     ]) +
-    makeSection('ds-mat', '📦 Separação de Material e Compras', [
+    makeSection('ds-mat', '📦 Separação de Material e Compras <span style="font-size:10px;opacity:0.8">(MATEUS)</span>', [
       { label:'Separação Lista de Compras', key:'sep_lista' },
       { label:'Comprar Material', key:'comprar' },
       { label:'Previsão Material Empresa (Ajuste+5du)', key:'prev_material', formula:true },
       { label:'Conferir Material', key:'conferir' },
     ]) +
-    makeSection('ds-pcp', '🏭 PCP — Produção', [
+    makeSection('ds-pcp', '🏭 PCP — Produção <span style="font-size:10px;opacity:0.8">(MARLONY)</span>', [
       { label:'Início Corte Produção', key:'corte_inicio' },
       { label:'Fim Fitamento Produção Expedição', key:'fitamento' },
     ]) +
-    makeSection('ds-entrega', '🚚 Entrega e Montagem', [
+    makeSection('ds-entrega', '🚚 Entrega e Montagem <span style="font-size:10px;opacity:0.8">(ADRIANA / HELDER)</span>', [
       { label:'Disponível para Adriana', key:'disp_adriana' },
       { label:'Prev. Agendamento (Disp. Adriana + 10du)', key:'prev_agendamento', formula:true },
       { label:'Agendamento Real (Agenda de Entrega)', key:'agenda_entrega' },
+      { label:'Equipe Responsável', key:'equipe', type:'text', placeholder:'Ex: Tadeu e Lucas' },
       { label:'Início da Montagem', key:'montagem_inicio' },
       { label:'Montagem Entregue', key:'montagem_entregue' },
     ]) +
@@ -1387,7 +1393,6 @@ function showToast(msg) {
 }
 
 // ── SISTEMA DE LOGIN ──────────────────────────────────────
-// Para trocar senhas: edite o objeto abaixo
 const USUARIOS = {
   'Jean':    'jean123',
   'Adriana': 'adriana123',
@@ -1439,7 +1444,6 @@ function fazerLogout() {
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────
-// Verificar se já estava logado nesta sessão
 const sessaoUsuario = sessionStorage.getItem('usuario');
 if (sessaoUsuario && USUARIOS[sessaoUsuario]) {
   usuarioLogado = sessaoUsuario;
@@ -1451,7 +1455,6 @@ if (sessaoUsuario && USUARIOS[sessaoUsuario]) {
   if (!hasCfg()) { openSetup(); showLoading(false); }
   else { closeSetup(); init(); }
 } else {
-  // Mostrar tela de login
   showLoading(false);
 }
 renderDashboard();
