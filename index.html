@@ -555,7 +555,22 @@ function openDetail(id){
   document.getElementById('dp-title').textContent=`${p.cliente} — ${p.ambiente}`;
   document.getElementById('dp-meta').innerHTML=`<span class="badge ${st.cls}">${st.label}</span><span class="badge badge-blue">${p.consultor}</span>${p.prazo_dias?`<span class="badge badge-gray">⏱ ${p.prazo_dias} du</span>`:''
   }${p.equipe?`<span class="badge badge-gray">👥 ${p.equipe}</span>`:''}${diff!==null?`<span class="badge ${diff<0?'badge-red':diff<=10?'badge-yellow':'badge-green'}">${diff<0?diff:'+'+diff} dias</span>`:''}`;
-  const makeSection=(cls,title,steps)=>`<div class="detail-section ${cls}" style="margin-bottom:12px"><div class="detail-section-header">${title}</div>${steps.map(s=>{const isF=s.formula,isTx=s.type==='text',rawVal=p[s.key]||'',val=isTx?rawVal:(rawVal?(toISO(rawVal)||')':''),prevVal=s.prev?(p[s.prev]||'):'';const isLate=!val&&s.prev&&p[s.prev]&&toISO(p[s.prev])<today();const dotCls=val?'dot-ok':isLate?'dot-late':prevVal&&toISO(prevVal)<today()?'dot-warn':'dot-pend';return`<div class="step-row"><div class="step-dot ${dotCls}"></div><div class="step-label">${s.label}</div><div class="step-prev">${isF?'<span style="font-size:10px;color:var(--accent)">auto</span>':''}</div><div class="step-real">${isF?`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`:isTx?`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`:`<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`}</div></div>`;}).join('')}</div>`;
+  const makeSection=(cls,title,steps)=>{
+  const rows=steps.map(s=>{
+    const isF=s.formula,isTx=s.type==='text';
+    const rawVal=p[s.key]||'';
+    const val=isTx?rawVal:(rawVal?(toISO(rawVal)||''):'');
+    const prevVal=s.prev?(p[s.prev]||''):'';
+    const isLate=!val&&s.prev&&p[s.prev]&&toISO(p[s.prev])<today();
+    const dotCls=val?'dot-ok':isLate?'dot-late':prevVal&&toISO(prevVal)<today()?'dot-warn':'dot-pend';
+    let input='';
+    if(isF) input=`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`;
+    else if(isTx) input=`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`;
+    else input=`<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`;
+    return `<div class="step-row"><div class="step-dot ${dotCls}"></div><div class="step-label">${s.label}</div><div class="step-prev">${isF?'<span style=\"font-size:10px;color:var(--accent)\">auto</span>':''}</div><div class="step-real">${input}</div></div>`;
+  }).join('');
+  return `<div class="detail-section ${cls}" style="margin-bottom:12px"><div class="detail-section-header">${title}</div>${rows}</div>`;
+};
   document.getElementById('dp-body').innerHTML=
     `<div class="detail-section" style="margin-bottom:12px;border-color:rgba(79,123,255,.3)"><div class="detail-section-header" style="background:rgba(79,123,255,.15);color:var(--accent)">🤝 Negociação <span style="font-size:10px;opacity:.8">(JEAN)</span></div>
     <div class="step-row"><div class="step-label">Data de Fechamento</div><span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(p.fechamento)}</span></div>
