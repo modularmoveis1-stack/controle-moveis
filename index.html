@@ -16,11 +16,18 @@
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left;}
 .nav-item:hover{background:var(--surface2);color:var(--text);}
 .nav-item.active{background:var(--accent-dim);color:var(--accent);font-weight:500;}
+/* PCP nav item destaque laranja */
+.nav-item.pcp-nav{color:#fb923c;}
+.nav-item.pcp-nav.active{background:rgba(249,115,22,.15);color:#f97316;font-weight:600;}
+.nav-item.pcp-nav:hover{background:rgba(249,115,22,.1);color:#f97316;}
 .nav-item svg{width:16px;height:16px;flex-shrink:0;}
 .nav-section{font-size:10px;font-weight:600;color:var(--text3);padding:10px 10px 4px;letter-spacing:.08em;text-transform:uppercase;}
 .main{margin-left:220px;min-height:100vh;}
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;}
+/* topbar laranja só no PCP */
+.topbar.pcp-active{background:#1a0f05;border-bottom-color:rgba(249,115,22,.3);}
 .topbar-title{font-size:15px;font-weight:600;flex:1;}
+.topbar.pcp-active .topbar-title{color:#f97316;}
 .content{padding:24px;}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
@@ -39,15 +46,19 @@
 .badge-red{background:var(--red-dim);color:var(--red);}
 .badge-blue{background:var(--accent-dim);color:var(--accent);}
 .badge-gray{background:var(--surface2);color:var(--text2);}
+.badge-orange{background:rgba(249,115,22,.15);color:#f97316;}
+.badge-teal{background:rgba(20,184,166,.15);color:var(--teal);}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:border-color .15s,transform .1s;}
 .stat-card:hover{transform:translateY(-1px);}
 .stat-card.clickable-red{border-color:rgba(239,68,68,0.4);}
 .stat-card.clickable-yellow{border-color:rgba(245,158,11,0.4);}
 .stat-card.clickable-green{border-color:rgba(34,197,94,0.4);}
+.stat-card.clickable-blue{border-color:rgba(79,123,255,0.4);}
+.stat-card.clickable-teal{border-color:rgba(20,184,166,0.4);}
 .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
 .stat-value{font-size:28px;font-weight:600;font-family:var(--mono);line-height:1;}
-.stat-value.green{color:var(--green);}.stat-value.yellow{color:var(--yellow);}.stat-value.red{color:var(--red);}.stat-value.blue{color:var(--accent);}
+.stat-value.green{color:var(--green);}.stat-value.yellow{color:var(--yellow);}.stat-value.red{color:var(--red);}.stat-value.blue{color:var(--accent);}.stat-value.teal{color:var(--teal);}.stat-value.orange{color:var(--orange);}
 .table-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12.5px;}
 thead th{background:var(--surface2);color:var(--text2);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:9px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;}
@@ -58,11 +69,12 @@ tbody td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .td-muted{color:var(--text2);}
 .td-date{font-family:var(--mono);font-size:12px;color:var(--text2);}
 .td-date.overdue{color:var(--red);}.td-date.warn{color:var(--yellow);}.td-date.ok{color:var(--green);}
-/* LINHAS COLORIDAS — principal correção */
 .row-atrasado{background:rgba(239,68,68,0.09)!important;}
 .row-atrasado td:first-child{box-shadow:inset 3px 0 0 var(--red);}
 .row-atencao{background:rgba(245,158,11,0.09)!important;}
 .row-atencao td:first-child{box-shadow:inset 3px 0 0 var(--yellow);}
+.row-entregue{background:rgba(34,197,94,0.05)!important;opacity:.75;}
+.row-entregue td:first-child{box-shadow:inset 3px 0 0 var(--green);}
 #detailPanel{position:fixed;right:0;top:0;bottom:0;width:520px;background:var(--surface);border-left:1px solid var(--border);z-index:150;transform:translateX(100%);transition:transform .25s;overflow-y:auto;display:flex;flex-direction:column;}
 #detailPanel.open{transform:translateX(0);}
 .detail-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:5;}
@@ -92,7 +104,6 @@ tbody td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .empty-state p{font-size:14px;}
 .toast{position:fixed;bottom:20px;right:24px;z-index:999;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:var(--text);transform:translateY(20px);opacity:0;transition:all .25s;pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
-/* BANNER de alertas */
 .mp-banner{display:none;margin:0 0 12px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;cursor:pointer;}
 .mp-banner.atrasado{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#fca5a5;}
 .mp-banner.atencao{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fcd34d;}
@@ -149,7 +160,6 @@ input[type="date"]{font-family:var(--mono);}
 .login-msg{font-size:12px;min-height:16px;color:var(--red);}
 .login-user-badge{display:flex;align-items:center;gap:10px;}
 .login-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
-/* Modal de lista por status */
 #mp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;}
 #mp-overlay.aberto{display:flex;}
 #mp-modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;max-width:680px;width:92%;max-height:82vh;overflow-y:auto;}
@@ -159,6 +169,28 @@ input[type="date"]{font-family:var(--mono);}
 #mp-modal td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}
 #mp-modal tbody tr:hover td{background:var(--surface2);}
 #mp-fechar{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1;margin-top:-4px;}
+
+/* ═══ PCP STYLES ═══════════════════════════════════════════ */
+.pcp-header{background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(249,115,22,.05));border:1px solid rgba(249,115,22,.3);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.pcp-header h2{font-size:15px;font-weight:600;color:#f97316;}
+.pcp-header .sub{font-size:11px;color:var(--text3);margin-top:3px;}
+.pcp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.pcp-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;}
+.pcp-stat .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.pcp-stat .val{font-size:22px;font-weight:600;font-family:var(--mono);color:#f97316;}
+.pcp-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.pcp-filters select,.pcp-filters input{width:auto;min-width:140px;font-size:13px;}
+.btn-pcp-add{background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3);border-radius:var(--radius-sm);padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;margin-left:auto;}
+.btn-pcp-add:hover{background:rgba(249,115,22,.25);}
+.pcp-table thead th{background:rgba(249,115,22,.12);color:#fb923c;}
+.pcp-row-readonly input,.pcp-row-readonly select{opacity:.6;cursor:not-allowed;}
+.pcp-prog{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px;}
+.pcp-prog-fill{height:100%;border-radius:2px;background:#f97316;}
+.pcp-totals{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:var(--radius-sm);padding:10px 16px;margin-top:12px;display:flex;gap:24px;flex-wrap:wrap;font-size:13px;}
+.pcp-totals span{color:var(--text3);}
+.pcp-totals strong{color:#f97316;}
+/* seção entregues no dashboard */
+.section-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
 </style>
 </head>
 <body>
@@ -219,6 +251,15 @@ input[type="date"]{font-family:var(--mono);}
     <button class="nav-item" onclick="showPage('novo')" id="nav-novo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Novo Projeto</span>
     </button>
+    <button class="nav-item pcp-nav" onclick="showPage('pcp')" id="nav-pcp">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/></svg><span>🏭 PCP</span>
+    </button>
+    <button class="nav-item" onclick="irParaEntregues()" id="nav-entregues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Entregues</span>
+    </button>
+    <button class="nav-item" onclick="abrirRelatorio()" id="nav-relatorio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>📄 Relatório</span>
+    </button>
     <button class="nav-item" onclick="openConfigModal()" style="margin-top:auto">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg><span>Configurações</span>
     </button>
@@ -226,7 +267,7 @@ input[type="date"]{font-family:var(--mono);}
 </nav>
 
 <div class="main">
-  <div class="topbar">
+  <div class="topbar" id="mainTopbar">
     <span class="topbar-title" id="pageTitle">Dashboard</span>
     <div id="syncStatus" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></div>
     <div class="login-user-badge" id="userBadge" style="display:none">
@@ -247,10 +288,23 @@ input[type="date"]{font-family:var(--mono);}
     <div id="page-dashboard">
       <div class="stats-grid" id="statsGrid"></div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Projetos recentes</span><button class="btn btn-ghost" style="font-size:12px" onclick="showPage('projetos')">Ver todos →</button></div>
+        <div class="card-header"><span class="card-title">Projetos em aberto — por prazo</span><button class="btn btn-ghost" style="font-size:12px" onclick="showPage('projetos')">Ver todos →</button></div>
         <div class="card-body" style="padding:0">
           <div id="dash-banner" class="mp-banner" style="margin:12px 12px 0"></div>
           <div class="table-wrap"><table id="dashTable"><thead><tr><th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo</th><th>Status</th><th>Progresso</th></tr></thead><tbody id="dashBody"></tbody></table></div>
+        </div>
+      </div>
+      <!-- SEÇÃO ENTREGUES — sempre visível -->
+      <div style="margin-top:24px">
+        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>✅ Projetos entregues</span>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="irParaEntregues()">Ver todos →</button>
+        </div>
+        <div class="stats-grid" id="statsEntregues" style="margin-bottom:16px"></div>
+        <div class="card" id="card-entregues-lista">
+          <div class="card-body" style="padding:0">
+            <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo Final</th><th>Data Entrega</th><th>Resultado</th></tr></thead><tbody id="entreguesBody"></tbody></table></div>
+          </div>
         </div>
       </div>
     </div>
@@ -263,9 +317,11 @@ input[type="date"]{font-family:var(--mono);}
         <select id="filterConsultor" onchange="renderProjetos()"><option value="">Todos os consultores</option></select>
         <select id="filterStatus" onchange="renderProjetos()">
           <option value="">Todos os status</option>
+          <option value="ag_medicao">📐 Ag. Medição</option>
           <option value="prazo">🟢 No prazo</option>
           <option value="atencao">🟡 Atenção</option>
           <option value="atrasado">🔴 Atrasado</option>
+          <option value="entregue">✅ Entregues</option>
         </select>
       </div>
       <div class="card">
@@ -353,6 +409,48 @@ input[type="date"]{font-family:var(--mono);}
       </div>
     </div>
 
+    <!-- PCP -->
+    <div id="page-pcp" style="display:none">
+      <div class="pcp-header">
+        <div>
+          <h2>🏭 PCP — Controle de Produção</h2>
+          <div class="sub">Fábrica · Acompanhamento de fases · Ordenado por prazo</div>
+        </div>
+        <div id="pcp-mes-label" style="font-size:11px;color:#fb923c;font-family:var(--mono)"></div>
+      </div>
+      <div class="pcp-stats" id="pcpStats"></div>
+      <div class="pcp-filters">
+        <select id="pcp-f-mes" onchange="renderPCP()">
+          <option value="">Todos os meses</option>
+        </select>
+        <select id="pcp-f-status" onchange="renderPCP()">
+          <option value="">Todos os status</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="producao">⚙️ Em produção</option>
+          <option value="expedido">✓ Expedido</option>
+        </select>
+        <input id="pcp-f-busca" placeholder="Buscar cliente..." oninput="renderPCP()" style="min-width:160px">
+        <button class="btn-pcp-add" id="btn-pcp-add" onclick="pcpAdicionarManual()">+ Lançar ambiente</button>
+      </div>
+      <div id="pcp-aviso-readonly" style="display:none;margin-bottom:10px;padding:8px 14px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:var(--radius-sm);font-size:12px;color:#fb923c">
+        👁️ Modo visualização — somente Marlony pode editar o PCP.
+      </div>
+      <div class="card" style="overflow:hidden">
+        <div class="table-wrap">
+          <table class="pcp-table">
+            <thead><tr>
+              <th>Cliente</th><th>Ambiente</th><th>Mês</th><th>Prazo</th>
+              <th>Corte</th><th>M²</th><th>Equipe</th>
+              <th>Início Fab.</th><th>Fim Fab.</th><th>Expedição</th>
+              <th>Status</th><th>Prog.</th><th></th>
+            </tr></thead>
+            <tbody id="pcpBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pcp-totals" id="pcpTotals"></div>
+    </div>
+
   </div>
 </div>
 
@@ -386,7 +484,6 @@ input[type="date"]{font-family:var(--mono);}
   </div>
 </div>
 
-<!-- Modal lista por status -->
 <div id="mp-overlay">
   <div id="mp-modal">
     <button id="mp-fechar">✕</button>
@@ -396,16 +493,103 @@ input[type="date"]{font-family:var(--mono);}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- MODAL RELATÓRIO -->
+<div class="modal-overlay" id="relModal">
+  <div class="modal" style="width:680px">
+    <div class="modal-header">
+      <h2>📄 Gerar Relatório</h2>
+      <button class="modal-close" onclick="fecharRelatorio()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label style="display:block;margin-bottom:6px">Tipo de relatório</label>
+          <select id="rel-tipo" onchange="previewRelatorio()" style="width:100%">
+            <option value="abertos">Projetos em aberto</option>
+            <option value="atrasados">Projetos atrasados</option>
+            <option value="atencao">Projetos em atenção</option>
+            <option value="ag_medicao">Aguardando medição</option>
+            <option value="entregues">Todos os entregues</option>
+            <option value="entregues_ok">Entregues no prazo</option>
+            <option value="entregues_atr">Entregues fora do prazo</option>
+            <option value="todos">Todos os projetos</option>
+            <option value="consultor">Por consultor</option>
+            <option value="cliente">Por cliente</option>
+            <option value="pcp">PCP — Produção (Maio/2026)</option>
+          </select>
+        </div>
+        <div id="rel-filtro-wrap" style="display:none">
+          <label id="rel-filtro-label" style="display:block;margin-bottom:6px">Filtro</label>
+          <input id="rel-filtro-val" oninput="previewRelatorio()" style="width:100%" placeholder="Digite para filtrar...">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="rel-count"></div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;max-height:320px;overflow-y:auto" id="rel-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharRelatorio()">Fechar</button>
+      <button class="btn btn-ghost" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+      <button class="btn btn-primary" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button>
+    </div>
+  </div>
+</div>
 
+<div class="toast" id="toast"></div>
 <script>
 // ══ CONFIG ══════════════════════════════════════════════
 const CFG_KEY='moveis_cfg_v1';
 const CFG_PADRAO={url:'https://script.google.com/macros/s/AKfycbxsxPyjW7JwadAfySUwcld8hFNYOB-M-f9x6fhYjATeyrxre3YvXm8lNQkT5m0ugjnnUA/exec',sheetId:'1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg',offlineMode:false};
-let CFG={...CFG_PADRAO},DB=[];
+let CFG={...CFG_PADRAO},DB=[],PCP_DB=[];
 function loadCfg(){try{const s=localStorage.getItem(CFG_KEY);if(s){const sv=JSON.parse(s);if(sv.url&&sv.sheetId)CFG=sv;else CFG={...CFG_PADRAO};}else CFG={...CFG_PADRAO};}catch{CFG={...CFG_PADRAO};}}
 function saveCfg(){localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}
 function hasCfg(){return CFG.offlineMode||(CFG.url&&CFG.sheetId);}
+
+// ══ PCP — DADOS SEED (Maio 2026) ════════════════════════
+const PCP_SEED=[
+  {id:'pcp-1',proj_id:null,cliente:'rachel guimaroes',ambiente:'wc rachel',mes:'Maio 2026',corte:'ok',m2:6.53,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
+  {id:'pcp-2',proj_id:null,cliente:'rachel guimaroes',ambiente:'wc jose',mes:'Maio 2026',corte:'ok',m2:7.01,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
+  {id:'pcp-3',proj_id:null,cliente:'jardel e thais',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:32.6,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-05',expedicao:'2026-05-05',prazo:''},
+  {id:'pcp-4',proj_id:null,cliente:'rachel guimaroes',ambiente:'quarto rachel',mes:'Maio 2026',corte:'ok',m2:43.18,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
+  {id:'pcp-5',proj_id:null,cliente:'liana nascimento',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:9.7,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
+  {id:'pcp-6',proj_id:null,cliente:'nyrla e ludgero',ambiente:'wc filha',mes:'Maio 2026',corte:'ok',m2:6.25,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-07',expedicao:'2026-05-07',prazo:''},
+  {id:'pcp-7',proj_id:null,cliente:'marcio sergio',ambiente:'cozinha+quarto',mes:'Maio 2026',corte:'ok',m2:11.3,equipe:'Guilherme',ini_fab:'2026-05-04',fim_fab:'2026-05-05',expedicao:'2026-05-05',prazo:''},
+  {id:'pcp-8',proj_id:null,cliente:'olga maria',ambiente:'wc suite 1',mes:'Maio 2026',corte:'ok',m2:3.97,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
+  {id:'pcp-9',proj_id:null,cliente:'olga maria',ambiente:'wc suite 2',mes:'Maio 2026',corte:'ok',m2:3.91,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
+  {id:'pcp-10',proj_id:null,cliente:'olga maria',ambiente:'wc suite casal',mes:'Maio 2026',corte:'ok',m2:3.99,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
+  {id:'pcp-11',proj_id:null,cliente:'rachel guimaroes',ambiente:'quarto jose',mes:'Maio 2026',corte:'ok',m2:49.43,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-18',expedicao:'',prazo:''},
+  {id:'pcp-12',proj_id:null,cliente:'carlos',ambiente:'academia mega fitniss',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-21',expedicao:'',prazo:''},
+  {id:'pcp-13',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 01',mes:'Maio 2026',corte:'ok',m2:10.98,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
+  {id:'pcp-14',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 03',mes:'Maio 2026',corte:'ok',m2:5.52,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
+  {id:'pcp-15',proj_id:null,cliente:'dorelice ferro',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:1.19,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
+  {id:'pcp-16',proj_id:null,cliente:'clarissa junqueira',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:10.29,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
+  {id:'pcp-17',proj_id:null,cliente:'clarissa junqueira',ambiente:'area de servico',mes:'Maio 2026',corte:'ok',m2:1.13,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
+  {id:'pcp-18',proj_id:null,cliente:'felipe e kezia',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:47.8,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
+  {id:'pcp-19',proj_id:null,cliente:'amanda marinho',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:5.85,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
+  {id:'pcp-20',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 02',mes:'Maio 2026',corte:'ok',m2:7.14,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
+  {id:'pcp-21',proj_id:null,cliente:'mayra soares',ambiente:'sala',mes:'Maio 2026',corte:'ok',m2:5.68,equipe:'Equipe externa',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
+  {id:'pcp-22',proj_id:null,cliente:'mayra soares',ambiente:'area de servico',mes:'Maio 2026',corte:'ok',m2:2.23,equipe:'Equipe externa',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
+  {id:'pcp-23',proj_id:null,cliente:'rachel guimaroes',ambiente:'gaveteiro-jose',mes:'Maio 2026',corte:'ok',m2:3.06,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-27',expedicao:'',prazo:''},
+  {id:'pcp-24',proj_id:null,cliente:'daiane kuniak',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:26.8,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-27',expedicao:'',prazo:''},
+  {id:'pcp-25',proj_id:null,cliente:'jardeu e thais',ambiente:'pratileira escritorio',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-20',fim_fab:'2026-05-22',expedicao:'',prazo:''},
+  {id:'pcp-26',proj_id:null,cliente:'eunice rocha',ambiente:'quarto',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-21',fim_fab:'2026-05-21',expedicao:'',prazo:''},
+  {id:'pcp-27',proj_id:null,cliente:'gercina dalva',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:39.94,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
+  {id:'pcp-28',proj_id:null,cliente:'gercina dalva',ambiente:'dispensa',mes:'Maio 2026',corte:'ok',m2:10.31,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
+  {id:'pcp-29',proj_id:null,cliente:'marina carvalho',ambiente:'varanda',mes:'Maio 2026',corte:'ok',m2:8.42,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
+  {id:'pcp-30',proj_id:null,cliente:'antonio e amparo',ambiente:'painel hall',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-31',proj_id:null,cliente:'antonio e amparo',ambiente:'wc social',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-32',proj_id:null,cliente:'thiago e morgana',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-33',proj_id:null,cliente:'ioline e laura',ambiente:'sala de procedimento',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-34',proj_id:null,cliente:'ioline e laura',ambiente:'recepçao',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-35',proj_id:null,cliente:'rachel guimaroes',ambiente:'lavanderia',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-36',proj_id:null,cliente:'francisco junior',ambiente:'quarto',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-37',proj_id:null,cliente:'felipe lunari',ambiente:'porta acesso banheiro',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-38',proj_id:null,cliente:'rachel guimaroes',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-39',proj_id:null,cliente:'ioline e laura',ambiente:'sala de esterilizacao',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-40',proj_id:null,cliente:'fabiana macedo',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-06-03',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-41',proj_id:null,cliente:'fabiana macedo',ambiente:'closet',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''},
+  {id:'pcp-42',proj_id:null,cliente:'fabiana macedo',ambiente:'quarto casal',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''},
+];
+let pcpProxId=100;
 
 // ══ DATAS ════════════════════════════════════════════════
 function toISO(str){if(!str)return null;if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.split('T')[0];try{const d=new Date(str);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];}catch(e){}return null;}
@@ -424,6 +608,12 @@ async function apiCreate(project){if(CFG.offlineMode){const data=localLoad();con
 async function apiUpdate(id,patch){if(CFG.offlineMode){const data=localLoad();const idx=data.findIndex(p=>p.id===id);if(idx===-1)throw new Error('Não encontrado');data[idx]={...data[idx],...patch};localSave(data);return data[idx];}const res=await gasCall('update',{sheetId:CFG.sheetId,id,data:JSON.stringify(patch)});return res.project;}
 async function apiDelete(id){if(CFG.offlineMode){localSave(localLoad().filter(p=>p.id!==id));return;}await gasCall('delete',{sheetId:CFG.sheetId,id});}
 
+// ══ PCP LOCAL ════════════════════════════════════════════
+function pcpLoad(){try{const s=localStorage.getItem('mm_pcp_v2');return s?JSON.parse(s):[...PCP_SEED];}catch{return[...PCP_SEED];}}
+function pcpSave(){localStorage.setItem('mm_pcp_v2',JSON.stringify(PCP_DB));}
+function pcpStatus(r){if(r.expedicao)return'expedido';if(r.ini_fab)return'producao';return'pendente';}
+function pcpProg(r){let p=0;if(r.corte==='ok')p+=25;if(r.ini_fab)p+=25;if(r.fim_fab)p+=25;if(r.expedicao)p+=25;return p;}
+
 // ══ SETUP ════════════════════════════════════════════════
 function openSetup(){document.getElementById('setupScreen').classList.remove('hidden');}
 function closeSetup(){document.getElementById('setupScreen').classList.add('hidden');}
@@ -438,69 +628,129 @@ function resetConfig(){if(!confirm('Redefinir?'))return;CFG={url:'',sheetId:'',o
 
 // ══ INIT ═════════════════════════════════════════════════
 function showLoading(v){document.getElementById('loadingOverlay').classList.toggle('show',v);}
-async function init(){showLoading(true);try{DB=await apiList();DB.sort((a,b)=>(b.id||0)-(a.id||0));updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}showLoading(false);renderDashboard();renderProjetos();}
-async function reloadData(){showLoading(true);try{DB=await apiList();DB.sort((a,b)=>(b.id||0)-(a.id||0));updateSyncStatus();renderDashboard();renderProjetos();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
+async function init(){
+  PCP_DB=pcpLoad();
+  showLoading(true);
+  try{DB=await apiList();sortDB();updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}
+  showLoading(false);
+  renderDashboard();renderProjetos();
+}
+async function reloadData(){showLoading(true);try{DB=await apiList();sortDB();updateSyncStatus();renderDashboard();renderProjetos();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
 function updateSyncStatus(){const el=document.getElementById('syncStatus');const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});el.textContent=CFG.offlineMode?'⚠ modo offline':`✓ sync ${now}`;}
+
+// Ordenação por prazo (não por id)
+function sortDB(){
+  DB.sort((a,b)=>{
+    // entregues vão para o fim
+    if(a.montagem_entregue && !b.montagem_entregue) return 1;
+    if(!a.montagem_entregue && b.montagem_entregue) return -1;
+    // sem prazo vai depois dos com prazo
+    if(!a.prazo && b.prazo) return 1;
+    if(a.prazo && !b.prazo) return -1;
+    if(!a.prazo && !b.prazo) return (b.id||0)-(a.id||0);
+    return new Date(toISO(a.prazo)) - new Date(toISO(b.prazo));
+  });
+}
 
 // ══ STATUS ═══════════════════════════════════════════════
 function getStatus(p){
-  if(!p.prazo){if(!p.medicao_real)return{key:'aguarda',label:'⏳ Aguarda medição',cls:'badge-gray'};return{key:'sem',label:'Sem prazo',cls:'badge-gray'};}
+  // Entregue
+  if(p.montagem_entregue){
+    const prazoD=toISO(p.prazo),entregaD=toISO(p.montagem_entregue);
+    if(prazoD&&entregaD){
+      return entregaD<=prazoD
+        ?{key:'entregue_ok',label:'✅ Entregue no prazo',cls:'badge-green'}
+        :{key:'entregue_atr',label:'⚠️ Entregue fora do prazo',cls:'badge-yellow'};
+    }
+    return{key:'entregue_ok',label:'✅ Entregue',cls:'badge-green'};
+  }
+  // Aguardando medição: fechamento preenchido, sem medição real
+  if(p.fechamento&&!p.medicao_real)return{key:'ag_medicao',label:'📐 Ag. Medição',cls:'badge-teal'};
+  if(!p.prazo)return{key:'sem',label:'Sem prazo',cls:'badge-gray'};
   const diff=diffDays(p.prazo);
   if(diff===null)return{key:'sem',label:'Sem prazo',cls:'badge-gray'};
   if(diff<0)return{key:'atrasado',label:'🔴 Atrasado',cls:'badge-red'};
   if(diff<=10)return{key:'atencao',label:'🟡 Atenção',cls:'badge-yellow'};
   return{key:'prazo',label:'🟢 No prazo',cls:'badge-green'};
 }
+function isEntregue(p){return!!(p.montagem_entregue);}
 function progresso(p){const steps=['medicao_real','exec_final','ajuste_fim','conferir','agenda_entrega','montagem_entregue'];return Math.round((steps.filter(s=>p[s]).length/steps.length)*100);}
 
 // ══ MODAL LISTA ═══════════════════════════════════════════
 document.getElementById('mp-fechar').onclick=function(){document.getElementById('mp-overlay').classList.remove('aberto');};
 document.getElementById('mp-overlay').onclick=function(e){if(e.target===this)this.classList.remove('aberto');};
 function abrirModal(alvo){
-  const labels={atrasado:'🔴 Atrasados',atencao:'🟡 Em Atenção',prazo:'🟢 No Prazo',aguarda:'⏳ Aguardando'};
+  const labels={atrasado:'🔴 Atrasados',atencao:'🟡 Em Atenção',prazo:'🟢 No Prazo',ag_medicao:'📐 Aguardando Medição',entregue_ok:'✅ Entregues no prazo',entregue_atr:'⚠️ Entregues fora do prazo'};
   const lista=DB.filter(p=>getStatus(p).key===alvo);
   document.getElementById('mp-titulo').textContent=(labels[alvo]||'Projetos')+' ('+lista.length+')';
   document.getElementById('mp-corpo').innerHTML=lista.length
-    ?lista.map(p=>{const diff=diffDays(p.prazo);const diasTxt=diff===null?'—':diff<0?`${diff}d atrasado`:diff===0?'hoje':`+${diff}d`;const cor=alvo==='atrasado'?'color:#fca5a5':alvo==='atencao'?'color:#fcd34d':'color:#86efac';return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td>${p.consultor}</td><td style="font-family:monospace">${p.prazo?fmt(p.prazo):'—'}</td><td style="font-family:monospace;font-weight:600;${cor}">${diasTxt}</td></tr>`;}).join('')
+    ?lista.map(p=>{const diff=diffDays(p.prazo);const diasTxt=diff===null?'—':diff<0?`${diff}d atrasado`:diff===0?'hoje':`+${diff}d`;const cor=alvo==='atrasado'?'color:#fca5a5':alvo==='atencao'?'color:#fcd34d':alvo==='ag_medicao'?'color:var(--teal)':'color:#86efac';return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td>${p.consultor}</td><td style="font-family:monospace">${p.prazo?fmt(p.prazo):'—'}</td><td style="font-family:monospace;font-weight:600;${cor}">${diasTxt}</td></tr>`;}).join('')
     :'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text2)">Nenhum projeto.</td></tr>';
   document.getElementById('mp-overlay').classList.add('aberto');
 }
 
 // ══ RENDER DASHBOARD ══════════════════════════════════════
 function renderDashboard(){
-  const total=DB.length,ok=DB.filter(p=>getStatus(p).key==='prazo').length,att=DB.filter(p=>getStatus(p).key==='atencao').length,late=DB.filter(p=>getStatus(p).key==='atrasado').length;
-  document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card" title="Ver todos" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='';renderProjetos();},100)">
-      <div class="stat-label">Total de Projetos</div><div class="stat-value blue">${total}</div></div>
-    <div class="stat-card clickable-green" title="Ver no prazo" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='prazo';renderProjetos();},100)">
-      <div class="stat-label">No Prazo</div><div class="stat-value green">${ok}</div></div>
-    <div class="stat-card clickable-yellow" title="Ver em atenção" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='atencao';renderProjetos();abrirModal('atencao');},120)">
-      <div class="stat-label">Atenção (≤10 dias)</div><div class="stat-value yellow">${att}</div></div>
-    <div class="stat-card clickable-red" title="Ver atrasados" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='atrasado';renderProjetos();abrirModal('atrasado');},120)">
-      <div class="stat-label">Atrasados</div><div class="stat-value red">${late}</div></div>`;
+  const abertos=DB.filter(p=>!isEntregue(p));
+  const entregues=DB.filter(p=>isEntregue(p)).sort((a,b)=>new Date(toISO(b.montagem_entregue))-new Date(toISO(a.montagem_entregue)));
+  const ok=abertos.filter(p=>getStatus(p).key==='prazo').length;
+  const att=abertos.filter(p=>getStatus(p).key==='atencao').length;
+  const late=abertos.filter(p=>getStatus(p).key==='atrasado').length;
+  const agm=abertos.filter(p=>getStatus(p).key==='ag_medicao').length;
+  const eok=entregues.filter(p=>getStatus(p).key==='entregue_ok').length;
+  const eatr=entregues.filter(p=>getStatus(p).key==='entregue_atr').length;
 
-  // Banner dashboard
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='';renderProjetos();},100)">
+      <div class="stat-label">Em aberto</div><div class="stat-value blue">${abertos.length}</div></div>
+    <div class="stat-card clickable-green" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='prazo';renderProjetos();},100)">
+      <div class="stat-label">No Prazo</div><div class="stat-value green">${ok}</div></div>
+    <div class="stat-card clickable-yellow" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='atencao';renderProjetos();abrirModal('atencao');},120)">
+      <div class="stat-label">Atenção (≤10 dias)</div><div class="stat-value yellow">${att}</div></div>
+    <div class="stat-card clickable-red" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='atrasado';renderProjetos();abrirModal('atrasado');},120)">
+      <div class="stat-label">Atrasados</div><div class="stat-value red">${late}</div></div>
+    <div class="stat-card clickable-teal" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='ag_medicao';renderProjetos();abrirModal('ag_medicao');},120)">
+      <div class="stat-label">📐 Ag. Medição</div><div class="stat-value teal">${agm}</div></div>`;
+
   const bn=document.getElementById('dash-banner');
   if(late>0){bn.className='mp-banner atrasado';bn.style.display='block';bn.innerHTML=`⚠ <b>${late} projeto${late>1?'s':''} atrasado${late>1?'s':''}</b> — clique para ver`;bn.onclick=()=>abrirModal('atrasado');}
   else if(att>0){bn.className='mp-banner atencao';bn.style.display='block';bn.innerHTML=`⚡ <b>${att} projeto${att>1?'s':''} vencendo em breve</b> — clique para ver`;bn.onclick=()=>abrirModal('atencao');}
   else{bn.style.display='none';}
 
-  const recent=[...DB].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,12);
+  // Tabela abertos — ordenados por prazo
   const tbody=document.getElementById('dashBody');
-  if(!recent.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><p>Nenhum projeto cadastrado ainda.</p></div></td></tr>';return;}
-  tbody.innerHTML=recent.map(p=>{
+  if(!abertos.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><p>Nenhum projeto em aberto.</p></div></td></tr>';}
+  else{tbody.innerHTML=abertos.slice(0,12).map(p=>{
     const st=getStatus(p),pct=progresso(p);
-    const prazoCell=p.prazo?fmt(p.prazo):(p.medicao_real?'—':'⏳ aguarda medição');
+    const prazoCell=p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—';
     const rowCls=st.key==='atrasado'?'row-atrasado':st.key==='atencao'?'row-atencao':'';
     return`<tr class="${rowCls}" style="cursor:pointer" onclick="openDetail(${p.id})">
-      <td class="td-name">${p.cliente}</td>
-      <td class="td-muted">${p.ambiente}</td>
-      <td class="td-muted">${p.consultor}</td>
+      <td class="td-name">${p.cliente}</td><td class="td-muted">${p.ambiente}</td><td class="td-muted">${p.consultor}</td>
       <td class="td-date ${st.key==='atrasado'?'overdue':st.key==='atencao'?'warn':p.prazo?'ok':''}">${prazoCell}</td>
-      <td><span class="badge ${st.cls}" style="cursor:pointer" title="Clique para ver todos" onclick="event.stopPropagation();abrirModal('${st.key}')">${st.label}</span></td>
+      <td><span class="badge ${st.cls}" style="cursor:pointer" onclick="event.stopPropagation();abrirModal('${st.key}')">${st.label}</span></td>
       <td style="min-width:100px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'var(--green)':pct>50?'var(--accent)':'var(--yellow)'}"></div></div><span style="font-size:10px;color:var(--text3)">${pct}%</span></td>
-    </tr>`;
-  }).join('');
+    </tr>`}).join('');}
+
+  // Cards entregues — sempre visíveis
+  document.getElementById('statsEntregues').innerHTML=`
+    <div class="stat-card ${entregues.length?'clickable-green':''}" onclick="irParaEntregues()">
+      <div class="stat-label">Total entregues</div><div class="stat-value ${entregues.length?'green':'blue'}">${entregues.length}</div></div>
+    <div class="stat-card ${eok?'clickable-green':''}" onclick="${eok?"showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='entregue';renderProjetos();abrirModal('entregue_ok');},120)":"''"}">
+      <div class="stat-label">✅ No prazo</div><div class="stat-value green">${eok}</div></div>
+    <div class="stat-card ${eatr?'clickable-yellow':''}" onclick="${eatr?"showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='entregue';renderProjetos();abrirModal('entregue_atr');},120)":"''"}">
+      <div class="stat-label">⚠️ Fora do prazo</div><div class="stat-value yellow">${eatr}</div></div>`;
+
+  // Tabela entregues
+  document.getElementById('entreguesBody').innerHTML=entregues.length
+    ? entregues.slice(0,10).map(p=>{
+        const st=getStatus(p);
+        return`<tr style="cursor:pointer" class="row-entregue" onclick="openDetail(${p.id})">
+          <td class="td-name">${p.cliente}</td><td class="td-muted">${p.ambiente}</td><td class="td-muted">${p.consultor}</td>
+          <td class="td-date">${p.prazo?fmt(p.prazo):'—'}</td>
+          <td class="td-date ok">${fmt(p.montagem_entregue)}</td>
+          <td><span class="badge ${st.cls}">${st.label}</span></td>
+        </tr>`;}).join('')
+    : '<tr><td colspan="6"><div class="empty-state" style="padding:24px"><p>Nenhum projeto entregue ainda. Quando um projeto for concluído ele aparece aqui.</p></div></td></tr>';
 }
 
 // ══ RENDER PROJETOS ═══════════════════════════════════════
@@ -509,13 +759,21 @@ function renderProjetos(){
   const consultores=[...new Set(DB.map(p=>p.consultor).filter(Boolean))].sort();
   const sel=document.getElementById('filterConsultor'),prev=sel.value;
   sel.innerHTML='<option value="">Todos os consultores</option>'+consultores.map(c=>`<option value="${c}" ${c===prev?'selected':''}>${c}</option>`).join('');
-  let filtered=DB.filter(p=>{const mq=((p.cliente||'')+' '+(p.ambiente||'')).toLowerCase().includes(q),mc=!fc||p.consultor===fc,ms=!fs||getStatus(p).key===fs;return mq&&mc&&ms;});
 
-  // Banner projetos
+  let filtered=DB.filter(p=>{
+    const mq=((p.cliente||'')+' '+(p.ambiente||'')).toLowerCase().includes(q);
+    const mc=!fc||p.consultor===fc;
+    const stk=getStatus(p).key;
+    let ms=true;
+    if(fs==='entregue') ms=isEntregue(p);
+    else if(fs) ms=stk===fs;
+    return mq&&mc&&ms;
+  });
+
   const nAt=DB.filter(p=>getStatus(p).key==='atrasado').length,nAv=DB.filter(p=>getStatus(p).key==='atencao').length;
   const bn=document.getElementById('proj-banner');
   if(nAt>0){bn.className='mp-banner atrasado';bn.style.display='block';bn.innerHTML=`⚠ <b>${nAt} projeto${nAt>1?'s':''} atrasado${nAt>1?'s':''}</b> — clique para ver`;bn.onclick=()=>abrirModal('atrasado');}
-  else if(nAv>0){bn.className='mp-banner atencao';bn.style.display='block';bn.innerHTML=`⚡ <b>${nAv} projeto${nAv>1?'s':''} vencendo em breve</b> — clique para ver`;bn.onclick=()=>abrirModal('atencao');}
+  else if(nAv>0){bn.className='mp-banner atencao';bn.style.display='block';bn.innerHTML=`⚡ <b>${nAv} em atenção</b> — clique para ver`;bn.onclick=()=>abrirModal('atencao');}
   else{bn.style.display='none';}
 
   const tbody=document.getElementById('projetosBody');
@@ -524,16 +782,15 @@ function renderProjetos(){
     const st=getStatus(p),diff=diffDays(p.prazo);
     const diasStr=diff!==null?(diff<0?`${diff}`:`+${diff}`):'—';
     const diasCls=diff!==null&&diff<0?'overdue':diff!==null&&diff<=10?'warn':'ok';
-    const prazoFinalStr=p.prazo?fmt(p.prazo):(p.medicao_real?'—':'⏳ aguarda medição');
-    // ✅ LINHAS COLORIDAS — aplicadas diretamente na geração do HTML
-    const rowCls=st.key==='atrasado'?'row-atrasado':st.key==='atencao'?'row-atencao':'';
+    const prazoFinalStr=p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—';
+    const entregue=isEntregue(p);
+    const rowCls=entregue?'row-entregue':st.key==='atrasado'?'row-atrasado':st.key==='atencao'?'row-atencao':'';
     return`<tr class="${rowCls}" style="cursor:pointer" onclick="openDetail(${p.id})">
-      <td class="td-name">${p.cliente||''}</td>
-      <td class="td-muted">${p.ambiente||''}</td>
-      <td class="td-muted">${p.consultor||''}</td>
+      <td class="td-name">${p.cliente||''}${entregue?'<span style="color:var(--green);margin-left:4px;font-size:10px">✓</span>':''}</td>
+      <td class="td-muted">${p.ambiente||''}</td><td class="td-muted">${p.consultor||''}</td>
       <td class="td-date">${fmt(p.fechamento)}</td>
       <td class="td-date" style="font-weight:600">${p.prazo_dias?p.prazo_dias+' du':'—'}</td>
-      <td class="td-date ${diasCls}">${prazoFinalStr}</td>
+      <td class="td-date ${entregue?'ok':diasCls}">${prazoFinalStr}</td>
       <td class="td-date">${fmt(p.prev_medicao)}</td>
       <td class="td-date ${p.medicao_real?'ok':''}">${fmt(p.medicao_real)}</td>
       <td class="td-date">${fmt(p.prev_executivo)}</td>
@@ -541,8 +798,8 @@ function renderProjetos(){
       <td class="td-date">${fmt(p.prev_material)}</td>
       <td class="td-date ${p.agenda_entrega?'ok':''}">${fmt(p.agenda_entrega)}</td>
       <td class="td-muted">${p.equipe||'—'}</td>
-      <td class="td-date ${diasCls}" style="font-weight:600">${diasStr} dias</td>
-      <td><span class="badge ${st.cls}" style="cursor:pointer" title="Filtrar por este status" onclick="event.stopPropagation();document.getElementById('filterStatus').value='${st.key}';renderProjetos()">${st.label}</span></td>
+      <td class="td-date ${entregue?'':diasCls}" style="font-weight:600">${entregue?'—':diasStr+' dias'}</td>
+      <td><span class="badge ${st.cls}" style="cursor:pointer" onclick="event.stopPropagation();document.getElementById('filterStatus').value='${st.key==='entregue_ok'||st.key==='entregue_atr'?'entregue':st.key}';renderProjetos()">${st.label}</span></td>
       <td><button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();deletarProjeto(${p.id})">✕</button></td>
     </tr>`;
   }).join('');
@@ -553,8 +810,15 @@ function openDetail(id){
   const p=DB.find(x=>x.id==id);if(!p)return;
   const st=getStatus(p),diff=diffDays(p.prazo);
   document.getElementById('dp-title').textContent=`${p.cliente} — ${p.ambiente}`;
+  // Banner entrega no topo do detail
+  let entregaBanner='';
+  if(isEntregue(p)){
+    const prazoD=toISO(p.prazo),entD=toISO(p.montagem_entregue);
+    const dentroFora=prazoD&&entD&&entD<=prazoD;
+    entregaBanner=`<div style="padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:500;${dentroFora?'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--green)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${dentroFora?'✅ Entregue dentro do prazo':'⚠️ Entregue fora do prazo'} em ${fmt(p.montagem_entregue)}${prazoD&&!dentroFora?` (prazo era ${fmt(p.prazo)})`:''}.</div>`;
+  }
   document.getElementById('dp-meta').innerHTML=`<span class="badge ${st.cls}">${st.label}</span><span class="badge badge-blue">${p.consultor}</span>${p.prazo_dias?`<span class="badge badge-gray">⏱ ${p.prazo_dias} du</span>`:''
-  }${p.equipe?`<span class="badge badge-gray">👥 ${p.equipe}</span>`:''}${diff!==null?`<span class="badge ${diff<0?'badge-red':diff<=10?'badge-yellow':'badge-green'}">${diff<0?diff:'+'+diff} dias</span>`:''}`;
+  }${p.equipe?`<span class="badge badge-gray">👥 ${p.equipe}</span>`:''}${diff!==null&&!isEntregue(p)?`<span class="badge ${diff<0?'badge-red':diff<=10?'badge-yellow':'badge-green'}">${diff<0?diff:'+'+diff} dias</span>`:''}`;
   const makeSection=(cls,title,steps)=>{
   const rows=steps.map(s=>{
     const isF=s.formula,isTx=s.type==='text';
@@ -564,18 +828,18 @@ function openDetail(id){
     const isLate=!val&&s.prev&&p[s.prev]&&toISO(p[s.prev])<today();
     const dotCls=val?'dot-ok':isLate?'dot-late':prevVal&&toISO(prevVal)<today()?'dot-warn':'dot-pend';
     let input='';
-    if(isF) input=`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`;
-    else if(isTx) input=`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`;
+    if(isF)input=`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`;
+    else if(isTx)input=`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`;
     else input=`<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`;
-    return `<div class="step-row"><div class="step-dot ${dotCls}"></div><div class="step-label">${s.label}</div><div class="step-prev">${isF?'<span style=\"font-size:10px;color:var(--accent)\">auto</span>':''}</div><div class="step-real">${input}</div></div>`;
+    return`<div class="step-row"><div class="step-dot ${dotCls}"></div><div class="step-label">${s.label}</div><div class="step-prev">${isF?'<span style="font-size:10px;color:var(--accent)">auto</span>':''}</div><div class="step-real">${input}</div></div>`;
   }).join('');
-  return `<div class="detail-section ${cls}" style="margin-bottom:12px"><div class="detail-section-header">${title}</div>${rows}</div>`;
+  return`<div class="detail-section ${cls}" style="margin-bottom:12px"><div class="detail-section-header">${title}</div>${rows}</div>`;
 };
-  document.getElementById('dp-body').innerHTML=
+  document.getElementById('dp-body').innerHTML=entregaBanner+
     `<div class="detail-section" style="margin-bottom:12px;border-color:rgba(79,123,255,.3)"><div class="detail-section-header" style="background:rgba(79,123,255,.15);color:var(--accent)">🤝 Negociação <span style="font-size:10px;opacity:.8">(JEAN)</span></div>
     <div class="step-row"><div class="step-label">Data de Fechamento</div><span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(p.fechamento)}</span></div>
     <div class="step-row"><div class="step-label">Prazo Entrega (dias úteis)</div><input type="number" min="1" step="1" value="${p.prazo_dias||''}" onchange="updateField(${id},'prazo_dias',this.value)" style="width:90px;font-size:12px;padding:4px 8px;font-family:var(--mono)"></div>
-    <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff<0?'var(--red)':diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):(p.medicao_real?'—':'⏳ aguarda medição')}</span></div></div>`+
+    <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—'}</span></div></div>`+
     makeSection('ds-agenda','📅 Agenda <span style="font-size:10px;opacity:.8">(ADRIANA)</span>',[{label:'Previsão Medição (+5du)',key:'prev_medicao',formula:true},{label:'Medição Final Real',key:'medicao_real'}])+
     makeSection('ds-exec','📐 Execução de Projeto Técnico <span style="font-size:10px;opacity:.8">(LUCAS / MARLONY)</span>',[{label:'Executivo Pegou',key:'exec_pegou'},{label:'Executivo Entregou — Listagem',key:'exec_listagem'},{label:'Previsão Executivo (Med+5du)',key:'prev_executivo',formula:true},{label:'Executivo Entregou — Finalizado',key:'exec_final'},{label:'Enviou para aprovação do cliente',key:'aprovacao_enviou'},{label:'Cliente aprovou',key:'aprovacao_cliente'},{label:'Início do Ajuste',key:'ajuste_inicio'},{label:'Previsão Ajuste (Exec+5du)',key:'prev_ajuste',formula:true},{label:'Fim do Ajuste',key:'ajuste_fim'}])+
     makeSection('ds-mat','📦 Separação de Material e Compras <span style="font-size:10px;opacity:.8">(MATEUS)</span>',[{label:'Separação Lista de Compras',key:'sep_lista'},{label:'Comprar Material',key:'comprar'},{label:'Previsão Material Empresa (Ajuste+5du)',key:'prev_material',formula:true},{label:'Conferir Material',key:'conferir'}])+
@@ -585,7 +849,7 @@ function openDetail(id){
     <div class="step-row"><div class="step-label">Dias no Executivo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.exec_pegou,p.exec_final)??'—'}</span></div>
     <div class="step-row"><div class="step-label">Dias no Ajuste</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.ajuste_inicio,p.ajuste_fim)??'—'}</span></div>
     <div class="step-row"><div class="step-label">Dias totais no fluxo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.fechamento,today())??'—'}</span></div>
-    <div class="step-row"><div class="step-label">Dias até o prazo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${diffDays(p.prazo)<0?'var(--red)':diffDays(p.prazo)<=10?'var(--yellow)':'var(--green)'}">${diffDays(p.prazo)??'—'}</span></div></div>
+    <div class="step-row"><div class="step-label">Dias até o prazo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'}">${diff??'—'}</span></div></div>
     <div style="padding:12px 0;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-danger" onclick="deletarProjeto(${id})">🗑 Remover Projeto</button></div>`;
   document.getElementById('detailPanel').classList.add('open');
 }
@@ -600,26 +864,291 @@ async function updateField(id,key,val){
   if(key==='exec_final')patch.prev_ajuste=addWorkdays(val,5);
   if(key==='ajuste_fim')patch.prev_material=addWorkdays(val,5);
   if(key==='disp_adriana')patch.prev_agendamento=val?addWorkdays(val,10):null;
+  // Quando entregar, auto-lançar no PCP e notificar
+  if(key==='montagem_entregue'&&val){
+    const pf=toISO(p.prazo),ef=toISO(val);
+    const dentroFora=pf&&ef&&ef<=pf;
+    setTimeout(()=>showToast(dentroFora?`✅ ${p.cliente} entregue NO PRAZO!`:`⚠️ ${p.cliente} entregue FORA DO PRAZO.`),200);
+    // Auto-lançar no PCP se não existir
+    pcpAutoLancar({...p,...patch,id});
+  }
   showLoading(true);
-  try{const updated=await apiUpdate(id,patch);const idx=DB.findIndex(x=>x.id==id);if(idx!==-1)DB[idx]=updated;openDetail(id);renderDashboard();renderProjetos();}
+  try{const updated=await apiUpdate(id,patch);const idx=DB.findIndex(x=>x.id==id);if(idx!==-1)DB[idx]=updated;sortDB();openDetail(id);renderDashboard();renderProjetos();}
   catch(e){showToast('Erro ao atualizar: '+e.message);}
   showLoading(false);
 }
 
+// Auto-lançar no PCP quando projeto cadastrado ou entregue
+function pcpAutoLancar(proj){
+  if(PCP_DB.find(r=>r.proj_id==proj.id))return;
+  const mes=mesAtualLabel();
+  PCP_DB.push({
+    id:'pcp-'+(++pcpProxId),proj_id:proj.id,
+    cliente:(proj.cliente||'').toLowerCase(),
+    ambiente:(proj.ambiente||'').toLowerCase(),
+    mes,corte:'',m2:null,equipe:proj.equipe||'',
+    ini_fab:toISO(proj.corte_inicio)||'',
+    fim_fab:toISO(proj.fitamento)||'',
+    expedicao:isEntregue(proj)?toISO(proj.montagem_entregue)||'':'',
+    prazo:toISO(proj.prazo)||''
+  });
+  pcpSave();
+}
+function mesAtualLabel(){const ms=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const d=new Date();return ms[d.getMonth()]+' '+d.getFullYear();}
+
 async function deletarProjeto(id){
   if(!confirm('Remover este projeto?'))return;
   showLoading(true);
-  try{await apiDelete(id);DB=DB.filter(x=>x.id!=id);closeDetail();renderProjetos();renderDashboard();showToast('Projeto removido.');}
+  try{await apiDelete(id);DB=DB.filter(x=>x.id!=id);PCP_DB=PCP_DB.filter(r=>r.proj_id!=id);pcpSave();closeDetail();renderProjetos();renderDashboard();showToast('Projeto removido.');}
   catch(e){showToast('Erro ao remover: '+e.message);}
   showLoading(false);
 }
 
+// ══ PCP RENDER ═══════════════════════════════════════════
+function renderPCP(){
+  const ehMarlony=(usuarioLogado==='Marlony'||usuarioLogado==='Admin');
+  document.getElementById('pcp-aviso-readonly').style.display=ehMarlony?'none':'block';
+  document.getElementById('btn-pcp-add').style.display=ehMarlony?'':'none';
+
+  // Popular select de meses
+  const selMes=document.getElementById('pcp-f-mes');
+  const mesesUnicos=[...new Set(PCP_DB.map(r=>r.mes))].filter(Boolean).sort();
+  const atualMes=selMes.value;
+  selMes.innerHTML='<option value="">Todos os meses</option>'+mesesUnicos.map(m=>`<option ${m===atualMes?'selected':''}>${m}</option>`).join('');
+  selMes.value=atualMes;
+
+  const fMes=selMes.value;
+  const fSt=document.getElementById('pcp-f-status').value;
+  const fBusca=document.getElementById('pcp-f-busca').value.toLowerCase();
+  document.getElementById('pcp-mes-label').textContent=fMes||'Todos os meses';
+
+  let lista=[...PCP_DB].sort((a,b)=>{
+    const da=a.fim_fab||a.ini_fab,db=b.fim_fab||b.ini_fab;
+    if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;
+    return new Date(da)-new Date(db);
+  }).filter(r=>{
+    if(fMes&&r.mes!==fMes)return false;
+    if(fBusca&&!r.cliente.includes(fBusca)&&!r.ambiente.includes(fBusca))return false;
+    if(fSt&&pcpStatus(r)!==fSt)return false;
+    return true;
+  });
+
+  const totalM2=lista.reduce((s,r)=>s+(r.m2||0),0);
+  const exp=lista.filter(r=>r.expedicao).length;
+  const prod=lista.filter(r=>r.ini_fab&&!r.expedicao).length;
+  const pend=lista.filter(r=>!r.ini_fab).length;
+
+  document.getElementById('pcpStats').innerHTML=`
+    <div class="pcp-stat"><div class="lbl">Ambientes</div><div class="val">${lista.length}</div></div>
+    <div class="pcp-stat"><div class="lbl">Total m²</div><div class="val">${totalM2.toFixed(1)}</div></div>
+    <div class="pcp-stat"><div class="lbl" style="color:var(--green)">Expedidos</div><div class="val" style="color:var(--green)">${exp}</div></div>
+    <div class="pcp-stat"><div class="lbl" style="color:var(--yellow)">Em produção</div><div class="val" style="color:var(--yellow)">${prod}</div></div>
+    <div class="pcp-stat"><div class="lbl" style="color:var(--text3)">Pendentes</div><div class="val" style="color:var(--text3)">${pend}</div></div>`;
+
+  const EQUIPES=['Cid premontando','Tadeu e Noronha','Arlen e Guilherme','Lucas e Yure','Marcílio e Antônio','Yure e Atevaldo','Guilherme','Equipe externa'];
+  const ro=!ehMarlony;
+
+  document.getElementById('pcpBody').innerHTML=lista.map(r=>{
+    const st=pcpStatus(r);
+    const prog=pcpProg(r);
+    const stBadge=st==='expedido'?`<span class="badge badge-green">✓ Expedido</span>`:st==='producao'?`<span class="badge badge-yellow">⚙ Produção</span>`:`<span class="badge badge-blue">⏳ Pendente</span>`;
+    const eqOpts=EQUIPES.map(e=>`<option ${r.equipe===e?'selected':''}>${e}</option>`).join('');
+    return`<tr id="pcpr-${r.id}">
+      <td class="td-name" style="text-transform:capitalize">${r.cliente}</td>
+      <td class="td-muted" style="text-transform:capitalize">${r.ambiente}</td>
+      <td class="td-date">${r.mes}</td>
+      <td class="td-date">${r.prazo?fmt(r.prazo):'—'}</td>
+      <td><select onchange="pcpSet('${r.id}','corte',this.value)" ${ro?'disabled':''} style="width:70px;font-size:12px;padding:3px 6px">
+        <option ${r.corte==='ok'?'selected':''} value="ok">ok</option>
+        <option ${r.corte==='pend'?'selected':''} value="pend">pend</option>
+        <option ${r.corte==='nok'?'selected':''} value="nok">não ok</option>
+      </select></td>
+      <td><input type="number" step="0.01" value="${r.m2||''}" placeholder="m²" ${ro?'disabled':''} onchange="pcpSet('${r.id}','m2',parseFloat(this.value)||null)" style="width:70px;font-size:12px;padding:3px 6px"></td>
+      <td><select onchange="pcpSet('${r.id}','equipe',this.value)" ${ro?'disabled':''} style="width:130px;font-size:12px;padding:3px 6px"><option value=""></option>${eqOpts}</select></td>
+      <td><input type="date" value="${r.ini_fab||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','ini_fab',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
+      <td><input type="date" value="${r.fim_fab||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','fim_fab',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
+      <td><input type="date" value="${r.expedicao||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','expedicao',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
+      <td>${stBadge}</td>
+      <td style="min-width:60px"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${prog}%</div><div class="pcp-prog"><div class="pcp-prog-fill" style="width:${prog}%;background:${prog===100?'var(--green)':'#f97316'}"></div></div></td>
+      <td>${ro?'':`<button onclick="pcpRemover('${r.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px" title="Remover">✕</button>`}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pcpTotals').innerHTML=`
+    <span>Total filtrado: <strong>${lista.length} ambientes</strong></span>
+    <span>M² total: <strong>${totalM2.toFixed(2)} m²</strong></span>
+    <span>Expedidos: <strong>${exp}</strong></span>
+    <span>Em produção: <strong>${prod}</strong></span>
+    <span>Pendentes: <strong>${pend}</strong></span>`;
+}
+
+function pcpSet(id,campo,valor){
+  const r=PCP_DB.find(x=>x.id===id);if(!r)return;
+  r[campo]=valor;pcpSave();
+  // Atualizar apenas linha sem re-render total
+  renderPCP();
+}
+function pcpRemover(id){
+  if(!confirm('Remover este ambiente do PCP?'))return;
+  PCP_DB=PCP_DB.filter(r=>r.id!==id);pcpSave();renderPCP();
+}
+function pcpAdicionarManual(){
+  const cli=prompt('Nome do cliente:');if(!cli)return;
+  const amb=prompt('Ambiente:');if(!amb)return;
+  PCP_DB.push({id:'pcp-'+(++pcpProxId),proj_id:null,cliente:cli.trim().toLowerCase(),ambiente:amb.trim().toLowerCase(),mes:mesAtualLabel(),corte:'',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''});
+  pcpSave();renderPCP();
+}
+
 // ══ NAVEGAÇÃO ═════════════════════════════════════════════
-const pageTitles={dashboard:'Dashboard',projetos:'Projetos',novo:'Novo Projeto'};
+function irParaEntregues(){
+  showPage('projetos');
+  setTimeout(()=>{document.getElementById('filterStatus').value='entregue';renderProjetos();},100);
+}
+
+const pageTitles={dashboard:'Dashboard',projetos:'Projetos',novo:'Novo Projeto',pcp:'🏭 PCP — Controle de Produção'};
 function showPage(name){
-  ['dashboard','projetos','novo'].forEach(p=>{document.getElementById('page-'+p).style.display=p===name?'':'none';document.getElementById('nav-'+p)?.classList.toggle('active',p===name);});
+  ['dashboard','projetos','novo','pcp'].forEach(p=>{
+    const el=document.getElementById('page-'+p);if(el)el.style.display=p===name?'':'none';
+    document.getElementById('nav-'+p)?.classList.toggle('active',p===name);
+  });
+  // Limpar active dos itens sem página própria
+  ['nav-entregues','nav-relatorio'].forEach(id=>{document.getElementById(id)?.classList.remove('active');});
   document.getElementById('pageTitle').textContent=pageTitles[name]||'';
-  if(name==='dashboard')renderDashboard();if(name==='projetos')renderProjetos();if(name==='novo')calcPreviews();
+  document.getElementById('mainTopbar').classList.toggle('pcp-active',name==='pcp');
+  if(name==='dashboard')renderDashboard();
+  if(name==='projetos')renderProjetos();
+  if(name==='novo')calcPreviews();
+  if(name==='pcp')renderPCP();
+}
+
+// ══ RELATÓRIO ════════════════════════════════════════════
+let relCache=[];
+function abrirRelatorio(){
+  document.getElementById('relModal').classList.add('open');
+  previewRelatorio();
+}
+function fecharRelatorio(){document.getElementById('relModal').classList.remove('open');}
+
+function previewRelatorio(){
+  const tipo=document.getElementById('rel-tipo').value;
+  const fwrap=document.getElementById('rel-filtro-wrap');
+  const fval=document.getElementById('rel-filtro-val').value.toLowerCase();
+
+  // Filtro extra para consultor/cliente
+  fwrap.style.display=(tipo==='consultor'||tipo==='cliente')?'block':'none';
+  document.getElementById('rel-filtro-label').textContent=tipo==='consultor'?'Nome do consultor':'Nome do cliente';
+
+  let lista=[];
+  let isPCP=tipo==='pcp';
+
+  if(isPCP){
+    lista=[...PCP_DB];
+  } else {
+    lista=[...DB];
+    if(tipo==='abertos')        lista=lista.filter(p=>!isEntregue(p));
+    else if(tipo==='atrasados') lista=lista.filter(p=>getStatus(p).key==='atrasado');
+    else if(tipo==='atencao')   lista=lista.filter(p=>getStatus(p).key==='atencao');
+    else if(tipo==='ag_medicao')lista=lista.filter(p=>getStatus(p).key==='ag_medicao');
+    else if(tipo==='entregues') lista=lista.filter(p=>isEntregue(p));
+    else if(tipo==='entregues_ok') lista=lista.filter(p=>getStatus(p).key==='entregue_ok');
+    else if(tipo==='entregues_atr')lista=lista.filter(p=>getStatus(p).key==='entregue_atr');
+    else if(tipo==='consultor') lista=lista.filter(p=>p.consultor&&p.consultor.toLowerCase().includes(fval));
+    else if(tipo==='cliente')   lista=lista.filter(p=>p.cliente&&p.cliente.toLowerCase().includes(fval));
+    // todos: sem filtro extra
+  }
+  relCache=lista;
+
+  const thStyle='padding:7px 10px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;';
+  const tdStyle='padding:7px 10px;border-bottom:1px solid #2a2f45;font-size:12px;';
+  const trHover='onmouseover="this.style.background=\'#1e2336\'" onmouseout="this.style.background=\'transparent\'"';
+
+  let html='';
+  if(isPCP){
+    const totalM2=lista.reduce((s,r)=>s+(r.m2||0),0);
+    html=`<table style="width:100%;border-collapse:collapse">
+      <thead style="background:#1e2336"><tr>
+        <th style="${thStyle}">Cliente</th><th style="${thStyle}">Ambiente</th>
+        <th style="${thStyle}">Mês</th><th style="${thStyle}">M²</th>
+        <th style="${thStyle}">Equipe</th><th style="${thStyle}">Início Fab.</th>
+        <th style="${thStyle}">Fim Fab.</th><th style="${thStyle}">Expedição</th><th style="${thStyle}">Status</th>
+      </tr></thead><tbody>`;
+    lista.forEach((r,i)=>{
+      const st=pcpStatus(r);
+      const stTxt=st==='expedido'?'✓ Expedido':st==='producao'?'⚙ Produção':'⏳ Pendente';
+      html+=`<tr ${trHover}><td style="${tdStyle};text-transform:capitalize;font-weight:500">${r.cliente}</td>
+        <td style="${tdStyle};text-transform:capitalize;color:#8b90a8">${r.ambiente}</td>
+        <td style="${tdStyle}">${r.mes}</td>
+        <td style="${tdStyle};color:#f97316;font-weight:500">${r.m2?r.m2+' m²':'—'}</td>
+        <td style="${tdStyle}">${r.equipe||'—'}</td>
+        <td style="${tdStyle};font-family:monospace">${r.ini_fab?fmt(r.ini_fab):'—'}</td>
+        <td style="${tdStyle};font-family:monospace">${r.fim_fab?fmt(r.fim_fab):'—'}</td>
+        <td style="${tdStyle};font-family:monospace">${r.expedicao?fmt(r.expedicao):'—'}</td>
+        <td style="${tdStyle}">${stTxt}</td></tr>`;
+    });
+    html+=`<tr style="background:#1e2336;font-weight:600"><td colspan="3" style="${tdStyle}">Total: ${lista.length} ambientes</td>
+      <td style="${tdStyle};color:#f97316">${totalM2.toFixed(2)} m²</td><td colspan="5"></td></tr></tbody></table>`;
+    document.getElementById('rel-count').textContent=`${lista.length} ambientes · ${totalM2.toFixed(2)} m² total`;
+  } else {
+    html=`<table style="width:100%;border-collapse:collapse">
+      <thead style="background:#1e2336"><tr>
+        <th style="${thStyle}">Cliente</th><th style="${thStyle}">Ambiente</th>
+        <th style="${thStyle}">Consultor</th><th style="${thStyle}">Fechamento</th>
+        <th style="${thStyle}">Prazo Final</th><th style="${thStyle}">Medição Real</th>
+        <th style="${thStyle}">Agenda Entrega</th><th style="${thStyle}">Montagem</th><th style="${thStyle}">Status</th>
+      </tr></thead><tbody>`;
+    lista.forEach(p=>{
+      const st=getStatus(p);
+      html+=`<tr ${trHover}><td style="${tdStyle};font-weight:500">${p.cliente||'—'}</td>
+        <td style="${tdStyle};color:#8b90a8">${p.ambiente||'—'}</td>
+        <td style="${tdStyle}">${p.consultor||'—'}</td>
+        <td style="${tdStyle};font-family:monospace">${fmt(p.fechamento)}</td>
+        <td style="${tdStyle};font-family:monospace;font-weight:600">${p.prazo?fmt(p.prazo):'—'}</td>
+        <td style="${tdStyle};font-family:monospace">${fmt(p.medicao_real)}</td>
+        <td style="${tdStyle};font-family:monospace">${fmt(p.agenda_entrega)}</td>
+        <td style="${tdStyle};font-family:monospace;color:${p.montagem_entregue?'#22c55e':'#555d7a'}">${fmt(p.montagem_entregue)}</td>
+        <td style="${tdStyle}">${st.label}</td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    document.getElementById('rel-count').textContent=`${lista.length} projeto${lista.length!==1?'s':''} encontrado${lista.length!==1?'s':''}`;
+  }
+  document.getElementById('rel-preview').innerHTML=html;
+}
+
+function imprimirRelatorio(){
+  const tipo=document.getElementById('rel-tipo').value;
+  const titulo=document.getElementById('rel-tipo').options[document.getElementById('rel-tipo').selectedIndex].text;
+  const conteudo=document.getElementById('rel-preview').innerHTML;
+  const data=new Date().toLocaleDateString('pt-BR');
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório — Modular Móveis</title>
+    <style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a2e;padding:24px}
+    h1{font-size:18px;margin-bottom:4px}h2{font-size:13px;color:#555;font-weight:normal;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse}th{background:#f0f2f5;padding:8px 10px;text-align:left;font-size:11px;border-bottom:2px solid #ddd}
+    td{padding:7px 10px;border-bottom:1px solid #eee;font-size:12px}tr:nth-child(even){background:#fafafa}
+    @media print{body{padding:8px}}</style></head><body>
+    <h1>Modular Móveis — ${titulo}</h1>
+    <h2>Gerado em ${data} · ${relCache.length} registro${relCache.length!==1?'s':''}</h2>
+    ${conteudo}
+    <script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.close();
+}
+
+function exportarCSV(){
+  const tipo=document.getElementById('rel-tipo').value;
+  const isPCP=tipo==='pcp';
+  let csv='';
+  if(isPCP){
+    csv='Cliente,Ambiente,Mês,M²,Equipe,Início Fab.,Fim Fab.,Expedição,Status\n';
+    relCache.forEach(r=>{csv+=`"${r.cliente}","${r.ambiente}","${r.mes||''}","${r.m2||''}","${r.equipe||''}","${r.ini_fab?fmt(r.ini_fab):''}","${r.fim_fab?fmt(r.fim_fab):''}","${r.expedicao?fmt(r.expedicao):''}","${pcpStatus(r)}"\n`;});
+  } else {
+    csv='Cliente,Ambiente,Consultor,Fechamento,Prazo Final,Medição Real,Agenda Entrega,Montagem Entregue,Status\n';
+    relCache.forEach(p=>{const st=getStatus(p);csv+=`"${p.cliente||''}","${p.ambiente||''}","${p.consultor||''}","${fmt(p.fechamento)}","${p.prazo?fmt(p.prazo):''}","${fmt(p.medicao_real)}","${fmt(p.agenda_entrega)}","${fmt(p.montagem_entregue)}","${st.label}"\n`;});
+  }
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`modular_${tipo}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();URL.revokeObjectURL(url);
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
@@ -642,8 +1171,15 @@ async function salvarProjeto(){
   const med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value;
   const p={cliente,ambiente,consultor,fechamento:fech,prazo_dias:prazoDias,prazo:med?addWorkdays(med,prazoDias):null,prev_medicao:addWorkdays(fech,5),medicao_real:med||null,exec_pegou:document.getElementById('n_exec_pegou').value||null,exec_listagem:document.getElementById('n_exec_listagem').value||null,prev_executivo:addWorkdays(med||addWorkdays(fech,5),5),exec_final:execF||null,aprovacao_enviou:document.getElementById('n_aprovacao_enviou').value||null,aprovacao_cliente:document.getElementById('n_aprovacao_cliente').value||null,ajuste_inicio:document.getElementById('n_ajuste_inicio').value||null,prev_ajuste:addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),ajuste_fim:ajF||null,sep_lista:document.getElementById('n_sep_lista').value||null,comprar:document.getElementById('n_comprar').value||null,prev_material:addWorkdays(ajF||addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),5),conferir:document.getElementById('n_conferir').value||null,corte_inicio:document.getElementById('n_corte_inicio').value||null,fitamento:document.getElementById('n_fitamento').value||null,disp_adriana:dispAdr||null,prev_agendamento:dispAdr?addWorkdays(dispAdr,10):null,agenda_entrega:document.getElementById('n_agenda_entrega').value||null,equipe:null,montagem_inicio:document.getElementById('n_montagem_inicio').value||null,montagem_entregue:document.getElementById('n_montagem_entregue').value||null,criado:today()};
   showLoading(true);
-  try{const created=await apiCreate(p);DB.unshift(created);DB.sort((a,b)=>(b.id||0)-(a.id||0));document.querySelectorAll('#page-novo input').forEach(el=>el.value='');document.getElementById('n_prazo_dias').value='55';calcPreviews();showToast('Projeto salvo com sucesso!');showPage('projetos');}
-  catch(e){showToast('Erro ao salvar: '+e.message);}
+  try{
+    const created=await apiCreate(p);
+    DB.unshift(created);sortDB();
+    // Auto-lançar no PCP
+    pcpAutoLancar(created);
+    document.querySelectorAll('#page-novo input').forEach(el=>el.value='');
+    document.getElementById('n_prazo_dias').value='55';calcPreviews();
+    showToast('Projeto salvo com sucesso!');showPage('projetos');
+  }catch(e){showToast('Erro ao salvar: '+e.message);}
   showLoading(false);
 }
 
@@ -659,7 +1195,7 @@ function fazerLogin(){
 function fazerLogout(){usuarioLogado=null;sessionStorage.removeItem('usuario');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('userBadge').style.display='none';document.getElementById('login_senha').value='';document.getElementById('login_msg').textContent='';DB=[];renderDashboard();renderProjetos();}
 
 const sessaoUsuario=sessionStorage.getItem('usuario');
-if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}else{showLoading(false);}
+if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
 renderDashboard();
 </script>
 </body>
