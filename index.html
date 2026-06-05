@@ -323,6 +323,10 @@ input[type="date"]{font-family:var(--mono);}
           <option value="atrasado">🔴 Atrasado</option>
           <option value="entregue">✅ Entregues</option>
         </select>
+        <button class="btn btn-ghost" style="font-size:12px;white-space:nowrap" onclick="abrirLote()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Marcar entregues em lote
+        </button>
       </div>
       <div class="card">
         <div class="card-body" style="padding:0">
@@ -490,6 +494,62 @@ input[type="date"]{font-family:var(--mono);}
     <h3 id="mp-titulo">Projetos</h3>
     <table><thead><tr><th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo Final</th><th>Dias</th></tr></thead>
     <tbody id="mp-corpo"></tbody></table>
+  </div>
+</div>
+
+<!-- MODAL MARCAR EM LOTE -->
+<div class="modal-overlay" id="loteModal">
+  <div class="modal" style="width:740px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <h2>📦 Marcar projetos como entregues</h2>
+      <button class="modal-close" onclick="fecharLote()">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto;padding-bottom:0">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <label style="display:block;margin-bottom:5px">Data de entrega para todos selecionados</label>
+          <input type="date" id="lote-data" style="width:100%">
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label style="display:block;margin-bottom:5px">Filtrar por consultor</label>
+          <select id="lote-filtro-consultor" onchange="renderLote()" style="width:100%">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:180px">
+          <label style="display:block;margin-bottom:5px">Buscar</label>
+          <input type="text" id="lote-busca" placeholder="Cliente ou ambiente..." oninput="renderLote()" style="width:100%">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text3)" id="lote-count">Nenhum selecionado</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="loteSelectAll()">Selecionar todos visíveis</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="loteDeselectAll()">Limpar seleção</button>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;max-height:340px;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead style="position:sticky;top:0;z-index:1">
+            <tr style="background:var(--surface2)">
+              <th style="width:36px;padding:8px 10px"><input type="checkbox" id="lote-check-all" onchange="loteToggleAll(this.checked)" style="width:auto;cursor:pointer"></th>
+              <th style="padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Cliente</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Ambiente</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Consultor</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Prazo Final</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Status</th>
+            </tr>
+          </thead>
+          <tbody id="lote-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0">
+      <button class="btn btn-ghost" onclick="fecharLote()">Cancelar</button>
+      <button class="btn btn-primary" id="lote-btn-confirmar" onclick="confirmarLote()" disabled style="opacity:.5">
+        ✅ Marcar selecionados como entregues
+      </button>
+    </div>
   </div>
 </div>
 
@@ -997,6 +1057,143 @@ function pcpAdicionarManual(){
   const amb=prompt('Ambiente:');if(!amb)return;
   PCP_DB.push({id:'pcp-'+(++pcpProxId),proj_id:null,cliente:cli.trim().toLowerCase(),ambiente:amb.trim().toLowerCase(),mes:mesAtualLabel(),corte:'',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''});
   pcpSave();renderPCP();
+}
+
+// ══ MARCAÇÃO EM LOTE ════════════════════════════════════
+let loteIds=new Set();
+
+function abrirLote(){
+  loteIds=new Set();
+  // Popular filtro de consultores
+  const consultores=[...new Set(DB.filter(p=>!isEntregue(p)).map(p=>p.consultor).filter(Boolean))].sort();
+  const sel=document.getElementById('lote-filtro-consultor');
+  sel.innerHTML='<option value="">Todos</option>'+consultores.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('lote-busca').value='';
+  document.getElementById('lote-data').value='';
+  document.getElementById('lote-check-all').checked=false;
+  renderLote();
+  document.getElementById('loteModal').classList.add('open');
+}
+
+function fecharLote(){
+  document.getElementById('loteModal').classList.remove('open');
+  loteIds=new Set();
+}
+
+function renderLote(){
+  const fc=document.getElementById('lote-filtro-consultor').value;
+  const fb=document.getElementById('lote-busca').value.toLowerCase();
+  // Mostrar apenas não-entregues
+  const lista=DB.filter(p=>{
+    if(isEntregue(p))return false;
+    if(fc&&p.consultor!==fc)return false;
+    if(fb&&!((p.cliente||'').toLowerCase().includes(fb))&&!((p.ambiente||'').toLowerCase().includes(fb)))return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('lote-tbody');
+  if(!lista.length){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">Nenhum projeto encontrado.</td></tr>`;
+    atualizarLoteCount();
+    return;
+  }
+
+  tbody.innerHTML=lista.map(p=>{
+    const st=getStatus(p);
+    const checked=loteIds.has(p.id);
+    const rowBg=checked?'background:rgba(79,123,255,.08)':'';
+    return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;${rowBg}" onclick="loteToggleRow(${p.id},this)" id="lote-row-${p.id}">
+      <td style="padding:8px 10px;text-align:center"><input type="checkbox" ${checked?'checked':''} style="width:auto;cursor:pointer" onclick="event.stopPropagation();loteToggleRow(${p.id},document.getElementById('lote-row-${p.id}'))" id="lote-cb-${p.id}"></td>
+      <td style="padding:8px 10px;font-weight:500;font-size:12px">${p.cliente||'—'}</td>
+      <td style="padding:8px 10px;color:var(--text2);font-size:12px">${p.ambiente||'—'}</td>
+      <td style="padding:8px 10px;color:var(--text2);font-size:12px">${p.consultor||'—'}</td>
+      <td style="padding:8px 10px;font-family:var(--mono);font-size:12px;color:${st.key==='atrasado'?'var(--red)':st.key==='atencao'?'var(--yellow)':'var(--text2)'}">${p.prazo?fmt(p.prazo):'—'}</td>
+      <td style="padding:8px 10px"><span class="badge ${st.cls}">${st.label}</span></td>
+    </tr>`;
+  }).join('');
+  atualizarLoteCount();
+}
+
+function loteToggleRow(id,tr){
+  const cb=document.getElementById('lote-cb-'+id);
+  if(loteIds.has(id)){
+    loteIds.delete(id);
+    if(cb)cb.checked=false;
+    if(tr)tr.style.background='';
+  } else {
+    loteIds.add(id);
+    if(cb)cb.checked=true;
+    if(tr)tr.style.background='rgba(79,123,255,.08)';
+  }
+  atualizarLoteCount();
+}
+
+function loteToggleAll(checked){
+  document.querySelectorAll('#lote-tbody tr').forEach(tr=>{
+    const m=tr.id.match(/lote-row-(\d+)/);
+    if(!m)return;
+    const id=parseInt(m[1]);
+    if(checked){loteIds.add(id);}else{loteIds.delete(id);}
+    tr.style.background=checked?'rgba(79,123,255,.08)':'';
+    const cb=document.getElementById('lote-cb-'+id);
+    if(cb)cb.checked=checked;
+  });
+  atualizarLoteCount();
+}
+
+function loteSelectAll(){
+  document.getElementById('lote-check-all').checked=true;
+  loteToggleAll(true);
+}
+function loteDeselectAll(){
+  document.getElementById('lote-check-all').checked=false;
+  loteToggleAll(false);
+}
+
+function atualizarLoteCount(){
+  const n=loteIds.size;
+  document.getElementById('lote-count').textContent=n===0?'Nenhum selecionado':`${n} projeto${n>1?'s':''} selecionado${n>1?'s':''}`;
+  const btn=document.getElementById('lote-btn-confirmar');
+  btn.disabled=n===0;
+  btn.style.opacity=n===0?'.5':'1';
+  btn.textContent=`✅ Marcar ${n>0?n+' projeto'+(n>1?'s':''):''} como entregue${n>1?'s':''}`;
+}
+
+async function confirmarLote(){
+  const data=document.getElementById('lote-data').value;
+  if(!data){showToast('Selecione a data de entrega.');return;}
+  if(loteIds.size===0){showToast('Selecione ao menos um projeto.');return;}
+
+  const ids=[...loteIds];
+  const confirmar=confirm(`Marcar ${ids.length} projeto${ids.length>1?'s':''} como entregue${ids.length>1?'s':''} em ${fmt(data)}?\n\nEsta ação não pode ser desfeita em lote.`);
+  if(!confirmar)return;
+
+  fecharLote();
+  showLoading(true);
+
+  let ok=0,erros=0;
+  for(const id of ids){
+    const p=DB.find(x=>x.id==id);
+    if(!p){erros++;continue;}
+    const patch={montagem_entregue:data};
+    // calcular se foi dentro ou fora do prazo
+    try{
+      const updated=await apiUpdate(id,patch);
+      const idx=DB.findIndex(x=>x.id==id);
+      if(idx!==-1)DB[idx]=updated;
+      ok++;
+    }catch(e){erros++;console.error('Erro ao atualizar',id,e);}
+  }
+
+  sortDB();
+  showLoading(false);
+  renderDashboard();
+  renderProjetos();
+
+  const msg=erros===0
+    ?`✅ ${ok} projeto${ok>1?'s':''} marcado${ok>1?'s':''} como entregue${ok>1?'s':''}!`
+    :`✅ ${ok} ok · ⚠️ ${erros} erro${erros>1?'s':''} — verifique a conexão`;
+  showToast(msg);
 }
 
 // ══ NAVEGAÇÃO ═════════════════════════════════════════════
