@@ -362,7 +362,11 @@ input[type="date"]{font-family:var(--mono);}
             <h3>Agenda <span style="color:var(--teal);font-size:10px">(ADRIANA)</span></h3>
             <div class="step-input-grid">
               <div class="step-input-item formula"><label>Prev. Medição (auto: Fech+5du)</label><div class="prev-hint" id="prev_medicao">—</div></div>
+              <div class="step-input-item"><label>Data Agendada com Cliente</label><input type="date" id="n_medicao_agendada" oninput="calcPreviews()"></div>
+              <div class="step-input-item formula"><label>Prazo Retorno Conferência (Agendada+3du)</label><div class="prev-hint" id="prev_retorno_conf">—</div></div>
               <div class="step-input-item"><label>Medição Final Real</label><input type="date" id="n_medicao_real" oninput="calcPreviews()"></div>
+              <div class="step-input-item"><label>Hora Início Conferência</label><input type="time" id="n_medicao_hora_inicio"></div>
+              <div class="step-input-item"><label>Hora Término Conferência</label><input type="time" id="n_medicao_hora_fim"></div>
             </div>
           </div>
           <div class="input-panel-section">
@@ -403,6 +407,7 @@ input[type="date"]{font-family:var(--mono);}
               <div class="step-input-item"><label>Agendamento Real (Agenda de Entrega)</label><input type="date" id="n_agenda_entrega" oninput="calcPreviews()"></div>
               <div class="step-input-item"><label>Início da Montagem</label><input type="date" id="n_montagem_inicio"></div>
               <div class="step-input-item"><label>Montagem Entregue</label><input type="date" id="n_montagem_entregue"></div>
+              <div class="step-input-item" style="grid-column:1/-1"><label>Link Checklist Assinado + Fotos (Drive)</label><input type="text" id="n_checklist_link" placeholder="Cole aqui o link da pasta/arquivo do Drive"></div>
             </div>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
@@ -725,7 +730,12 @@ function getStatus(p){
     return{key:'entregue_ok',label:'✅ Entregue',cls:'badge-green'};
   }
   // Aguardando medição: fechamento preenchido, sem medição real
-  if(p.fechamento&&!p.medicao_real)return{key:'ag_medicao',label:'📐 Ag. Medição',cls:'badge-teal'};
+  if(p.fechamento&&!p.medicao_real){
+    const diffRet=p.prazo_retorno_conf?diffDays(p.prazo_retorno_conf):null;
+    if(diffRet!==null&&diffRet<0)return{key:'ag_medicao',label:'🔴 Retorno Conferência Atrasado',cls:'badge-red'};
+    if(diffRet!==null&&diffRet<=1)return{key:'ag_medicao',label:'🟡 Retorno Conferência Próximo',cls:'badge-yellow'};
+    return{key:'ag_medicao',label:'📐 Ag. Medição',cls:'badge-teal'};
+  }
   if(!p.prazo)return{key:'sem',label:'Sem prazo',cls:'badge-gray'};
   const diff=diffDays(p.prazo);
   if(diff===null)return{key:'sem',label:'Sem prazo',cls:'badge-gray'};
@@ -844,7 +854,7 @@ function renderProjetos(){
     const diasCls=diff!==null&&diff<0?'overdue':diff!==null&&diff<=10?'warn':'ok';
     const prazoFinalStr=p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—';
     const entregue=isEntregue(p);
-    const rowCls=entregue?'row-entregue':st.key==='atrasado'?'row-atrasado':st.key==='atencao'?'row-atencao':'';
+    const rowCls=entregue?'row-entregue':st.key==='atrasado'?'row-atrasado':st.key==='atencao'?'row-atencao':(st.key==='ag_medicao'&&st.cls==='badge-red')?'row-atrasado':(st.key==='ag_medicao'&&st.cls==='badge-yellow')?'row-atencao':'';
     return`<tr class="${rowCls}" style="cursor:pointer" onclick="openDetail(${p.id})">
       <td class="td-name">${p.cliente||''}${entregue?'<span style="color:var(--green);margin-left:4px;font-size:10px">✓</span>':''}</td>
       <td class="td-muted">${p.ambiente||''}</td><td class="td-muted">${p.consultor||''}</td>
@@ -881,15 +891,21 @@ function openDetail(id){
   }${p.equipe?`<span class="badge badge-gray">👥 ${p.equipe}</span>`:''}${diff!==null&&!isEntregue(p)?`<span class="badge ${diff<0?'badge-red':diff<=10?'badge-yellow':'badge-green'}">${diff<0?diff:'+'+diff} dias</span>`:''}`;
   const makeSection=(cls,title,steps)=>{
   const rows=steps.map(s=>{
-    const isF=s.formula,isTx=s.type==='text';
+    const isF=s.formula,isTx=s.type==='text',isTime=s.type==='time',isLock=s.lockable;
     const rawVal=p[s.key]||'';
-    const val=isTx?rawVal:(rawVal?(toISO(rawVal)||''):'');
+    const val=(isTx||isTime)?rawVal:(rawVal?(toISO(rawVal)||''):'');
     const prevVal=s.prev?(p[s.prev]||''):'';
     const isLate=!val&&s.prev&&p[s.prev]&&toISO(p[s.prev])<today();
     const dotCls=val?'dot-ok':isLate?'dot-late':prevVal&&toISO(prevVal)<today()?'dot-warn':'dot-pend';
     let input='';
-    if(isF)input=`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`;
-    else if(isTx)input=`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`;
+    if(isLock){
+      input=val
+        ?`<span style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:600">🔒 ${fmt(val)}</span>`
+        :`<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="if(confirm('Confirmar aprovação do cliente? Essa ação não pode ser desfeita.'))updateField(${id},'${s.key}',today())">✅ Confirmar Aprovação</button>`;
+    }
+    else if(isF)input=`<span style="font-family:var(--mono);font-size:12px;color:var(--accent)">${fmt(p[s.key])}</span>`;
+    else if(isTx)input=`<input type="text" value="${val.replace(/"/g,'&quot;')}" onchange="updateField(${id},'${s.key}',this.value)" placeholder="${s.placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">${s.key==='checklist_link'&&val?`<a href="${val.replace(/"/g,'&quot;')}" target="_blank" rel="noopener" style="margin-left:6px;font-size:11px;color:var(--accent)">🔗 Abrir</a>`:''}`;
+    else if(isTime)input=`<input type="time" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:110px;font-size:12px;padding:4px 8px">`;
     else input=`<input type="date" value="${val}" onchange="updateField(${id},'${s.key}',this.value)" style="width:130px;font-size:12px;padding:4px 8px">`;
     return`<div class="step-row"><div class="step-dot ${dotCls}"></div><div class="step-label">${s.label}</div><div class="step-prev">${isF?'<span style="font-size:10px;color:var(--accent)">auto</span>':''}</div><div class="step-real">${input}</div></div>`;
   }).join('');
@@ -900,11 +916,12 @@ function openDetail(id){
     <div class="step-row"><div class="step-label">Data de Fechamento</div><span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(p.fechamento)}</span></div>
     <div class="step-row"><div class="step-label">Prazo Entrega (dias úteis)</div><input type="number" min="1" step="1" value="${p.prazo_dias||''}" onchange="updateField(${id},'prazo_dias',this.value)" style="width:90px;font-size:12px;padding:4px 8px;font-family:var(--mono)"></div>
     <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—'}</span></div></div>`+
-    makeSection('ds-agenda','📅 Agenda <span style="font-size:10px;opacity:.8">(ADRIANA)</span>',[{label:'Previsão Medição (+5du)',key:'prev_medicao',formula:true},{label:'Medição Final Real',key:'medicao_real'}])+
-    makeSection('ds-exec','📐 Execução de Projeto Técnico <span style="font-size:10px;opacity:.8">(LUCAS / MARLONY)</span>',[{label:'Executivo Pegou',key:'exec_pegou'},{label:'Executivo Entregou — Listagem',key:'exec_listagem'},{label:'Previsão Executivo (Med+5du)',key:'prev_executivo',formula:true},{label:'Executivo Entregou — Finalizado',key:'exec_final'},{label:'Enviou para aprovação do cliente',key:'aprovacao_enviou'},{label:'Cliente aprovou',key:'aprovacao_cliente'},{label:'Início do Ajuste',key:'ajuste_inicio'},{label:'Previsão Ajuste (Exec+5du)',key:'prev_ajuste',formula:true},{label:'Fim do Ajuste',key:'ajuste_fim'}])+
+    makeSection('ds-agenda','📅 Agenda <span style="font-size:10px;opacity:.8">(ADRIANA)</span>',[{label:'Previsão Medição (+5du)',key:'prev_medicao',formula:true},{label:'Data Agendada com Cliente',key:'medicao_agendada'},{label:'Prazo Retorno Conferência (Agendada+3du)',key:'prazo_retorno_conf',formula:true},{label:'Medição Final Real',key:'medicao_real'},{label:'Hora Início Conferência',key:'medicao_hora_inicio',type:'time'},{label:'Hora Término Conferência',key:'medicao_hora_fim',type:'time'}])+
+    (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
+    makeSection('ds-exec','📐 Execução de Projeto Técnico <span style="font-size:10px;opacity:.8">(LUCAS / MARLONY)</span>',[{label:'Executivo Pegou',key:'exec_pegou'},{label:'Executivo Entregou — Listagem',key:'exec_listagem'},{label:'Previsão Executivo (Med+5du)',key:'prev_executivo',formula:true},{label:'Executivo Entregou — Finalizado',key:'exec_final'},{label:'Enviou para aprovação do cliente',key:'aprovacao_enviou'},{label:'Cliente aprovou',key:'aprovacao_cliente',lockable:true},{label:'Início do Ajuste',key:'ajuste_inicio'},{label:'Previsão Ajuste (Exec+5du)',key:'prev_ajuste',formula:true},{label:'Fim do Ajuste',key:'ajuste_fim'}])+
     makeSection('ds-mat','📦 Separação de Material e Compras <span style="font-size:10px;opacity:.8">(MATEUS)</span>',[{label:'Separação Lista de Compras',key:'sep_lista'},{label:'Comprar Material',key:'comprar'},{label:'Previsão Material Empresa (Ajuste+5du)',key:'prev_material',formula:true},{label:'Conferir Material',key:'conferir'}])+
     makeSection('ds-pcp','🏭 PCP — Produção <span style="font-size:10px;opacity:.8">(MARLONY)</span>',[{label:'Início Corte Produção',key:'corte_inicio'},{label:'Fim Fitamento Produção Expedição',key:'fitamento'}])+
-    makeSection('ds-entrega','🚚 Entrega e Montagem <span style="font-size:10px;opacity:.8">(ADRIANA / HELDER)</span>',[{label:'Disponível para Adriana',key:'disp_adriana'},{label:'Prev. Agendamento (Disp. Adriana + 10du)',key:'prev_agendamento',formula:true},{label:'Agendamento Real (Agenda de Entrega)',key:'agenda_entrega'},{label:'Equipe Responsável',key:'equipe',type:'text',placeholder:'Ex: Tadeu e Lucas'},{label:'Início da Montagem',key:'montagem_inicio'},{label:'Montagem Entregue',key:'montagem_entregue'}])+
+    makeSection('ds-entrega','🚚 Entrega e Montagem <span style="font-size:10px;opacity:.8">(ADRIANA / HELDER)</span>',[{label:'Disponível para Adriana',key:'disp_adriana'},{label:'Prev. Agendamento (Disp. Adriana + 10du)',key:'prev_agendamento',formula:true},{label:'Agendamento Real (Agenda de Entrega)',key:'agenda_entrega'},{label:'Equipe Responsável',key:'equipe',type:'text',placeholder:'Ex: Tadeu e Lucas'},{label:'Início da Montagem',key:'montagem_inicio'},{label:'Montagem Entregue',key:'montagem_entregue'},{label:'Link Checklist Assinado + Fotos',key:'checklist_link',type:'text',placeholder:'Link do Drive'}])+
     `<div class="detail-section ds-fluxo" style="margin-bottom:12px"><div class="detail-section-header">⏱ Fluxo de Tempo</div>
     <div class="step-row"><div class="step-label">Dias no Executivo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.exec_pegou,p.exec_final)??'—'}</span></div>
     <div class="step-row"><div class="step-label">Dias no Ajuste</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.ajuste_inicio,p.ajuste_fim)??'—'}</span></div>
@@ -920,6 +937,7 @@ async function updateField(id,key,val){
   const patch={};
   if(key==='prazo_dias'){const n=parseInt(val,10);patch.prazo_dias=n>0?n:null;}else patch[key]=val===''?null:val;
   if(key==='medicao_real'){patch.prev_executivo=addWorkdays(val||p.prev_medicao,5);patch.prazo=val&&p.prazo_dias?addWorkdays(val,p.prazo_dias):null;}
+  if(key==='medicao_agendada')patch.prazo_retorno_conf=val?addWorkdays(val,3):null;
   if(key==='prazo_dias'){patch.prazo=p.medicao_real&&patch.prazo_dias?addWorkdays(p.medicao_real,patch.prazo_dias):null;}
   if(key==='exec_final')patch.prev_ajuste=addWorkdays(val,5);
   if(key==='ajuste_fim')patch.prev_material=addWorkdays(val,5);
@@ -1351,10 +1369,11 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 // ══ FORM PREVIEWS ═════════════════════════════════════════
 function calcPreviews(){
-  const fech=document.getElementById('n_fechamento').value,med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value,prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10)||0;
-  const prazo=med&&prazoDias>0?addWorkdays(med,prazoDias):null,prevMed=addWorkdays(fech,5),prevExec=addWorkdays(med||prevMed,5),prevAjuste=addWorkdays(execF||prevExec,5),prevMat=addWorkdays(ajF||prevAjuste,5),prevAg=dispAdr?addWorkdays(dispAdr,10):null;
+  const fech=document.getElementById('n_fechamento').value,med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value,prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10)||0,medAgendada=document.getElementById('n_medicao_agendada').value;
+  const prazo=med&&prazoDias>0?addWorkdays(med,prazoDias):null,prevMed=addWorkdays(fech,5),prevExec=addWorkdays(med||prevMed,5),prevAjuste=addWorkdays(execF||prevExec,5),prevMat=addWorkdays(ajF||prevAjuste,5),prevAg=dispAdr?addWorkdays(dispAdr,10):null,prevRetConf=medAgendada?addWorkdays(medAgendada,3):null;
   document.getElementById('prev_prazo').textContent=prazo?`${fmt(prazo)} (Medição + ${prazoDias} du)`:(med?'—':'Aguardando medição real da Adriana');
   document.getElementById('prev_medicao').textContent=prevMed?fmt(prevMed):'—';
+  document.getElementById('prev_retorno_conf').textContent=prevRetConf?fmt(prevRetConf):'—';
   document.getElementById('prev_executivo').textContent=prevExec?fmt(prevExec):'—';
   document.getElementById('prev_ajuste').textContent=prevAjuste?fmt(prevAjuste):'—';
   document.getElementById('prev_material').textContent=prevMat?fmt(prevMat):'—';
@@ -1365,8 +1384,8 @@ function calcPreviews(){
 async function salvarProjeto(){
   const fech=document.getElementById('n_fechamento').value,cliente=document.getElementById('n_cliente').value.trim(),ambiente=document.getElementById('n_ambiente').value.trim(),consultor=document.getElementById('n_consultor').value.trim(),prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10);
   if(!cliente||!ambiente||!consultor||!fech||!prazoDias||prazoDias<1){showToast('Preencha Cliente, Ambiente, Consultor, Fechamento e Prazo');return;}
-  const med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value;
-  const p={cliente,ambiente,consultor,fechamento:fech,prazo_dias:prazoDias,prazo:med?addWorkdays(med,prazoDias):null,prev_medicao:addWorkdays(fech,5),medicao_real:med||null,exec_pegou:document.getElementById('n_exec_pegou').value||null,exec_listagem:document.getElementById('n_exec_listagem').value||null,prev_executivo:addWorkdays(med||addWorkdays(fech,5),5),exec_final:execF||null,aprovacao_enviou:document.getElementById('n_aprovacao_enviou').value||null,aprovacao_cliente:document.getElementById('n_aprovacao_cliente').value||null,ajuste_inicio:document.getElementById('n_ajuste_inicio').value||null,prev_ajuste:addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),ajuste_fim:ajF||null,sep_lista:document.getElementById('n_sep_lista').value||null,comprar:document.getElementById('n_comprar').value||null,prev_material:addWorkdays(ajF||addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),5),conferir:document.getElementById('n_conferir').value||null,corte_inicio:document.getElementById('n_corte_inicio').value||null,fitamento:document.getElementById('n_fitamento').value||null,disp_adriana:dispAdr||null,prev_agendamento:dispAdr?addWorkdays(dispAdr,10):null,agenda_entrega:document.getElementById('n_agenda_entrega').value||null,equipe:null,montagem_inicio:document.getElementById('n_montagem_inicio').value||null,montagem_entregue:document.getElementById('n_montagem_entregue').value||null,criado:today()};
+  const med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value,medAgendada=document.getElementById('n_medicao_agendada').value;
+  const p={cliente,ambiente,consultor,fechamento:fech,prazo_dias:prazoDias,prazo:med?addWorkdays(med,prazoDias):null,prev_medicao:addWorkdays(fech,5),medicao_agendada:medAgendada||null,prazo_retorno_conf:medAgendada?addWorkdays(medAgendada,3):null,medicao_real:med||null,medicao_hora_inicio:document.getElementById('n_medicao_hora_inicio').value||null,medicao_hora_fim:document.getElementById('n_medicao_hora_fim').value||null,exec_pegou:document.getElementById('n_exec_pegou').value||null,exec_listagem:document.getElementById('n_exec_listagem').value||null,prev_executivo:addWorkdays(med||addWorkdays(fech,5),5),exec_final:execF||null,aprovacao_enviou:document.getElementById('n_aprovacao_enviou').value||null,aprovacao_cliente:document.getElementById('n_aprovacao_cliente').value||null,ajuste_inicio:document.getElementById('n_ajuste_inicio').value||null,prev_ajuste:addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),ajuste_fim:ajF||null,sep_lista:document.getElementById('n_sep_lista').value||null,comprar:document.getElementById('n_comprar').value||null,prev_material:addWorkdays(ajF||addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),5),conferir:document.getElementById('n_conferir').value||null,corte_inicio:document.getElementById('n_corte_inicio').value||null,fitamento:document.getElementById('n_fitamento').value||null,disp_adriana:dispAdr||null,prev_agendamento:dispAdr?addWorkdays(dispAdr,10):null,agenda_entrega:document.getElementById('n_agenda_entrega').value||null,equipe:null,montagem_inicio:document.getElementById('n_montagem_inicio').value||null,montagem_entregue:document.getElementById('n_montagem_entregue').value||null,checklist_link:document.getElementById('n_checklist_link').value||null,criado:today()};
   showLoading(true);
   try{
     const created=await apiCreate(p);
