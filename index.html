@@ -334,7 +334,7 @@ input[type="date"]{font-family:var(--mono);}
             <table><thead><tr>
               <th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Fechamento</th><th>Prazo Jean (du)</th>
               <th>Prazo Final</th><th>Prev. Medição</th><th>Medição Real</th><th>Prev. Executivo</th>
-              <th>Ajuste Real</th><th>Prev. Material</th><th>Agenda Entrega</th><th>Equipe</th>
+              <th>Conferido (Marlony)</th><th>Pacote</th><th>Agenda Entrega</th><th>Equipe</th>
               <th>Dias Prazo</th><th>Status</th><th></th>
             </tr></thead><tbody id="projetosBody"></tbody></table>
           </div>
@@ -351,64 +351,12 @@ input[type="date"]{font-family:var(--mono);}
             <h3>Dados da Negociação <span style="color:var(--accent);font-size:10px">(JEAN)</span></h3>
             <div class="step-input-grid">
               <div class="step-input-item"><label>Nome do Cliente *</label><input type="text" id="n_cliente" placeholder="Ex: Maria Silva"></div>
+              <div class="step-input-item"><label>Código SIS</label><input type="text" id="n_codigo_sis" placeholder="Ex: 00123"></div>
               <div class="step-input-item"><label>Ambiente *</label><input type="text" id="n_ambiente" placeholder="Ex: Cozinha"></div>
               <div class="step-input-item"><label>Consultor *</label><input type="text" id="n_consultor" placeholder="Ex: Jean Veras"></div>
-              <div class="step-input-item"><label>Data de Fechamento *</label><input type="date" id="n_fechamento" oninput="calcPreviews()"></div>
-              <div class="step-input-item"><label>Prazo Entrega (dias úteis) *</label><input type="number" id="n_prazo_dias" value="55" min="1" step="1" oninput="calcPreviews()" placeholder="Ex: 55"></div>
-              <div class="step-input-item formula" style="grid-column:1/-1"><label>Prazo Final (auto: Medição Real + dias úteis)</label><div class="prev-hint" id="prev_prazo">Aguardando medição real da Adriana</div></div>
+              <div class="step-input-item"><label>Prazo Entrega (dias úteis) *</label><input type="number" id="n_prazo_dias" value="55" min="1" step="1" placeholder="Ex: 55"></div>
             </div>
-          </div>
-          <div class="input-panel-section">
-            <h3>Agenda <span style="color:var(--teal);font-size:10px">(ADRIANA)</span></h3>
-            <div class="step-input-grid">
-              <div class="step-input-item formula"><label>Prev. Medição (auto: Fech+5du)</label><div class="prev-hint" id="prev_medicao">—</div></div>
-              <div class="step-input-item"><label>Data Agendada com Cliente</label><input type="date" id="n_medicao_agendada" oninput="calcPreviews()"></div>
-              <div class="step-input-item formula"><label>Prazo Retorno Conferência (Agendada+3du)</label><div class="prev-hint" id="prev_retorno_conf">—</div></div>
-              <div class="step-input-item"><label>Medição Final Real</label><input type="date" id="n_medicao_real" oninput="calcPreviews()"></div>
-              <div class="step-input-item"><label>Hora Início Conferência</label><input type="time" id="n_medicao_hora_inicio"></div>
-              <div class="step-input-item"><label>Hora Término Conferência</label><input type="time" id="n_medicao_hora_fim"></div>
-            </div>
-          </div>
-          <div class="input-panel-section">
-            <h3>Execução de Projeto Técnico <span style="color:var(--purple);font-size:10px">(LUCAS / MARLONY)</span></h3>
-            <div class="step-input-grid">
-              <div class="step-input-item"><label>Executivo Pegou</label><input type="date" id="n_exec_pegou"></div>
-              <div class="step-input-item"><label>Executivo Entregou — Listagem</label><input type="date" id="n_exec_listagem"></div>
-              <div class="step-input-item formula"><label>Prev. Executivo (auto: Med+5du)</label><div class="prev-hint" id="prev_executivo">—</div></div>
-              <div class="step-input-item"><label>Executivo Entregou — Finalizado</label><input type="date" id="n_exec_final" oninput="calcPreviews()"></div>
-              <div class="step-input-item"><label>Enviou para aprovação do cliente</label><input type="date" id="n_aprovacao_enviou"></div>
-              <div class="step-input-item"><label>Cliente aprovou</label><input type="date" id="n_aprovacao_cliente"></div>
-              <div class="step-input-item"><label>Início do Ajuste</label><input type="date" id="n_ajuste_inicio"></div>
-              <div class="step-input-item formula"><label>Prev. Ajuste (auto: Exec+5du)</label><div class="prev-hint" id="prev_ajuste">—</div></div>
-              <div class="step-input-item"><label>Fim do Ajuste</label><input type="date" id="n_ajuste_fim" oninput="calcPreviews()"></div>
-            </div>
-          </div>
-          <div class="input-panel-section">
-            <h3>Separação de Material e Compras <span style="color:var(--orange);font-size:10px">(MATEUS)</span></h3>
-            <div class="step-input-grid">
-              <div class="step-input-item"><label>Separação Lista de Compras</label><input type="date" id="n_sep_lista"></div>
-              <div class="step-input-item"><label>Comprar Material</label><input type="date" id="n_comprar"></div>
-              <div class="step-input-item formula"><label>Prev. Material Empresa (auto: Ajuste+5du)</label><div class="prev-hint" id="prev_material">—</div></div>
-              <div class="step-input-item"><label>Conferir Material</label><input type="date" id="n_conferir"></div>
-            </div>
-          </div>
-          <div class="input-panel-section">
-            <h3>PCP <span style="color:var(--accent);font-size:10px">(MARLONY)</span></h3>
-            <div class="step-input-grid">
-              <div class="step-input-item"><label>Início Corte Produção</label><input type="date" id="n_corte_inicio"></div>
-              <div class="step-input-item"><label>Fim Fitamento Produção Expedição</label><input type="date" id="n_fitamento"></div>
-            </div>
-          </div>
-          <div class="input-panel-section">
-            <h3>Entrega e Montagem <span style="color:var(--green);font-size:10px">(ADRIANA / HELDER)</span></h3>
-            <div class="step-input-grid">
-              <div class="step-input-item"><label>Disponível para Adriana</label><input type="date" id="n_disp_adriana" oninput="calcPreviews()"></div>
-              <div class="step-input-item formula"><label>Prev. Agendamento (auto: Disp. Adriana + 10du)</label><div class="prev-hint" id="prev_agendamento">—</div></div>
-              <div class="step-input-item"><label>Agendamento Real (Agenda de Entrega)</label><input type="date" id="n_agenda_entrega" oninput="calcPreviews()"></div>
-              <div class="step-input-item"><label>Início da Montagem</label><input type="date" id="n_montagem_inicio"></div>
-              <div class="step-input-item"><label>Montagem Entregue</label><input type="date" id="n_montagem_entregue"></div>
-              <div class="step-input-item" style="grid-column:1/-1"><label>Link Checklist Assinado + Fotos (Drive)</label><input type="text" id="n_checklist_link" placeholder="Cole aqui o link da pasta/arquivo do Drive"></div>
-            </div>
+            <p style="font-size:11px;color:var(--text3);margin-top:10px">Depois de salvar, marque "Fechado em" no painel do projeto para dar início ao fluxo.</p>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
             <button class="btn btn-ghost" onclick="showPage('projetos')">Cancelar</button>
@@ -744,7 +692,7 @@ function getStatus(p){
   return{key:'prazo',label:'🟢 No prazo',cls:'badge-green'};
 }
 function isEntregue(p){return!!(p.montagem_entregue);}
-function progresso(p){const steps=['medicao_real','exec_final','ajuste_fim','conferir','agenda_entrega','montagem_entregue'];return Math.round((steps.filter(s=>p[s]).length/steps.length)*100);}
+function progresso(p){const steps=['medicao_real','aprovacao_cliente','conferido','agenda_entrega','montagem_entregue'];return Math.round((steps.filter(s=>p[s]).length/steps.length)*100);}
 
 // ══ MODAL LISTA ═══════════════════════════════════════════
 document.getElementById('mp-fechar').onclick=function(){document.getElementById('mp-overlay').classList.remove('aberto');};
@@ -864,8 +812,8 @@ function renderProjetos(){
       <td class="td-date">${fmt(p.prev_medicao)}</td>
       <td class="td-date ${p.medicao_real?'ok':''}">${fmt(p.medicao_real)}</td>
       <td class="td-date">${fmt(p.prev_executivo)}</td>
-      <td class="td-date ${p.ajuste_fim?'ok':''}">${fmt(p.ajuste_fim)}</td>
-      <td class="td-date">${fmt(p.prev_material)}</td>
+      <td class="td-date ${p.conferido?'ok':''}">${fmt(p.conferido)}</td>
+      <td class="td-muted">${p.pacote_ref||'—'}</td>
       <td class="td-date ${p.agenda_entrega?'ok':''}">${fmt(p.agenda_entrega)}</td>
       <td class="td-muted">${p.equipe||'—'}</td>
       <td class="td-date ${entregue?'':diasCls}" style="font-weight:600">${entregue?'—':diasStr+' dias'}</td>
@@ -876,6 +824,40 @@ function renderProjetos(){
 }
 
 // ══ DETALHE ═══════════════════════════════════════════════
+// ══ PERMISSÕES POR ETAPA (quem pode marcar/editar) ═════════
+function podeEditar(owner){return usuarioLogado==='Admin'||usuarioLogado===owner;}
+function stepRow(id,p,key,label,owner){
+  const val=p[key],can=podeEditar(owner);
+  let box;
+  if(val){
+    box=can
+      ?`<span style="cursor:pointer" title="Clique para desmarcar (${owner})" onclick="if(confirm('Desmarcar &quot;${label}&quot;?'))updateField(${id},'${key}',null)"><span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span></span>`
+      :`<span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span>`;
+  }else if(can){
+    box=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onclick="updateField(${id},'${key}',today())" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:var(--text3)">marcar</span></label>`;
+  }else{
+    box=`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(${owner})</span></span>`;
+  }
+  return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${box}</div></div>`;
+}
+function typedRow(id,p,key,label,owner,type,placeholder){
+  const can=podeEditar(owner),val=p[key]||'';
+  let input;
+  if(can){
+    input=type==='time'
+      ?`<input type="time" value="${val}" onchange="updateField(${id},'${key}',this.value)" style="width:110px;font-size:12px;padding:4px 8px">`
+      :type==='number'
+        ?`<input type="number" min="1" step="1" value="${val}" onchange="updateField(${id},'${key}',this.value)" style="width:90px;font-size:12px;padding:4px 8px;font-family:var(--mono)">`
+        :`<input type="text" value="${(''+val).replace(/"/g,'&quot;')}" onchange="updateField(${id},'${key}',this.value)" placeholder="${placeholder||''}" style="width:160px;font-size:12px;padding:4px 8px">`;
+  }else{
+    input=`<span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${val||'—'}</span>`;
+  }
+  return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${input}</div></div>`;
+}
+function stepGroup(title,owner,rowsHtml){
+  return`<div class="detail-section" style="margin-bottom:12px"><div class="detail-section-header">${title} <span style="font-size:10px;opacity:.8">(${owner})</span></div>${rowsHtml}</div>`;
+}
+
 function openDetail(id){
   const p=DB.find(x=>x.id==id);if(!p)return;
   const st=getStatus(p),diff=diffDays(p.prazo);
@@ -913,18 +895,23 @@ function openDetail(id){
 };
   document.getElementById('dp-body').innerHTML=entregaBanner+
     `<div class="detail-section" style="margin-bottom:12px;border-color:rgba(79,123,255,.3)"><div class="detail-section-header" style="background:rgba(79,123,255,.15);color:var(--accent)">🤝 Negociação <span style="font-size:10px;opacity:.8">(JEAN)</span></div>
-    <div class="step-row"><div class="step-label">Data de Fechamento</div><span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(p.fechamento)}</span></div>
-    <div class="step-row"><div class="step-label">Prazo Entrega (dias úteis)</div><input type="number" min="1" step="1" value="${p.prazo_dias||''}" onchange="updateField(${id},'prazo_dias',this.value)" style="width:90px;font-size:12px;padding:4px 8px;font-family:var(--mono)"></div>
-    <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):st.key==='ag_medicao'?'📐 aguarda medição':'—'}</span></div></div>`+
-    makeSection('ds-agenda','📅 Agenda <span style="font-size:10px;opacity:.8">(ADRIANA)</span>',[{label:'Previsão Medição (+5du)',key:'prev_medicao',formula:true},{label:'Data Agendada com Cliente',key:'medicao_agendada'},{label:'Prazo Retorno Conferência (Agendada+3du)',key:'prazo_retorno_conf',formula:true},{label:'Medição Final Real',key:'medicao_real'},{label:'Hora Início Conferência',key:'medicao_hora_inicio',type:'time'},{label:'Hora Término Conferência',key:'medicao_hora_fim',type:'time'}])+
+    `+typedRow(id,p,'codigo_sis','Código SIS','Jean')+`
+    `+typedRow(id,p,'prazo_dias','Prazo Entrega (dias úteis)','Jean','number')+`
+    <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):'aguarda medição real'}</span></div>
+    `+stepRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
+    stepGroup('📅 Agendamento','Adriana', stepRow(id,p,'medicao_agendada','Agendado em','Adriana'))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
-    makeSection('ds-exec','📐 Execução de Projeto Técnico <span style="font-size:10px;opacity:.8">(LUCAS / MARLONY)</span>',[{label:'Executivo Pegou',key:'exec_pegou'},{label:'Executivo Entregou — Listagem',key:'exec_listagem'},{label:'Previsão Executivo (Med+5du)',key:'prev_executivo',formula:true},{label:'Executivo Entregou — Finalizado',key:'exec_final'},{label:'Enviou para aprovação do cliente',key:'aprovacao_enviou'},{label:'Cliente aprovou',key:'aprovacao_cliente',lockable:true},{label:'Início do Ajuste',key:'ajuste_inicio'},{label:'Previsão Ajuste (Exec+5du)',key:'prev_ajuste',formula:true},{label:'Fim do Ajuste',key:'ajuste_fim'}])+
-    makeSection('ds-mat','📦 Separação de Material e Compras <span style="font-size:10px;opacity:.8">(MATEUS)</span>',[{label:'Separação Lista de Compras',key:'sep_lista'},{label:'Comprar Material',key:'comprar'},{label:'Previsão Material Empresa (Ajuste+5du)',key:'prev_material',formula:true},{label:'Conferir Material',key:'conferir'}])+
-    makeSection('ds-pcp','🏭 PCP — Produção <span style="font-size:10px;opacity:.8">(MARLONY)</span>',[{label:'Início Corte Produção',key:'corte_inicio'},{label:'Fim Fitamento Produção Expedição',key:'fitamento'}])+
-    makeSection('ds-entrega','🚚 Entrega e Montagem <span style="font-size:10px;opacity:.8">(ADRIANA / HELDER)</span>',[{label:'Disponível para Adriana',key:'disp_adriana'},{label:'Prev. Agendamento (Disp. Adriana + 10du)',key:'prev_agendamento',formula:true},{label:'Agendamento Real (Agenda de Entrega)',key:'agenda_entrega'},{label:'Equipe Responsável',key:'equipe',type:'text',placeholder:'Ex: Tadeu e Lucas'},{label:'Início da Montagem',key:'montagem_inicio'},{label:'Montagem Entregue',key:'montagem_entregue'},{label:'Link Checklist Assinado + Fotos',key:'checklist_link',type:'text',placeholder:'Link do Drive'}])+
+    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+typedRow(id,p,'medicao_hora_inicio','Hora Início','Mateus','time')+typedRow(id,p,'medicao_hora_fim','Hora Término','Mateus','time')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus'))+
+    stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
+    stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
+    stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
+    stepGroup('🏭 PCP — Ajuste','Marlony', stepRow(id,p,'marlony_inicio_ajuste','Início Ajuste','Marlony')+stepRow(id,p,'enviado_de_volta','Enviado de Volta','Marlony')+stepRow(id,p,'conferido','Conferido','Marlony')+typedRow(id,p,'pacote_ref','Referência do Pacote','Marlony','text','Ex: PACOTE 0107'))+
+    stepGroup('🚚 Recebimento e Agenda','Adriana', stepRow(id,p,'disp_adriana','Recebido Fábrica','Adriana')+stepRow(id,p,'agenda_entrega','Agendado Para','Adriana'))+
+    stepGroup('📣 Apresentação','Jean', stepRow(id,p,'apresentado_equipe','Apresentado Equipe','Jean'))+
+    stepGroup('🔧 Montagem','Helder', stepRow(id,p,'montado_em','Montado em','Helder')+typedRow(id,p,'equipe','Equipe','Helder','text','Ex: Tadeu e Lucas')+stepRow(id,p,'montagem_entregue','Checklist Finalizado','Helder'))+
     `<div class="detail-section ds-fluxo" style="margin-bottom:12px"><div class="detail-section-header">⏱ Fluxo de Tempo</div>
-    <div class="step-row"><div class="step-label">Dias no Executivo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.exec_pegou,p.exec_final)??'—'}</span></div>
-    <div class="step-row"><div class="step-label">Dias no Ajuste</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.ajuste_inicio,p.ajuste_fim)??'—'}</span></div>
+    <div class="step-row"><div class="step-label">Dias no Executivo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.exec_pegou,p.aprovacao_cliente)??'—'}</span></div>
+    <div class="step-row"><div class="step-label">Dias no Ajuste (PCP)</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.marlony_inicio_ajuste,p.conferido)??'—'}</span></div>
     <div class="step-row"><div class="step-label">Dias totais no fluxo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.fechamento,today())??'—'}</span></div>
     <div class="step-row"><div class="step-label">Dias até o prazo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'}">${diff??'—'}</span></div></div>
     <div style="padding:12px 0;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-danger" onclick="deletarProjeto(${id})">🗑 Remover Projeto</button></div>`;
@@ -1368,33 +1355,25 @@ function exportarCSV(){
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
 // ══ FORM PREVIEWS ═════════════════════════════════════════
-function calcPreviews(){
-  const fech=document.getElementById('n_fechamento').value,med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value,prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10)||0,medAgendada=document.getElementById('n_medicao_agendada').value;
-  const prazo=med&&prazoDias>0?addWorkdays(med,prazoDias):null,prevMed=addWorkdays(fech,5),prevExec=addWorkdays(med||prevMed,5),prevAjuste=addWorkdays(execF||prevExec,5),prevMat=addWorkdays(ajF||prevAjuste,5),prevAg=dispAdr?addWorkdays(dispAdr,10):null,prevRetConf=medAgendada?addWorkdays(medAgendada,3):null;
-  document.getElementById('prev_prazo').textContent=prazo?`${fmt(prazo)} (Medição + ${prazoDias} du)`:(med?'—':'Aguardando medição real da Adriana');
-  document.getElementById('prev_medicao').textContent=prevMed?fmt(prevMed):'—';
-  document.getElementById('prev_retorno_conf').textContent=prevRetConf?fmt(prevRetConf):'—';
-  document.getElementById('prev_executivo').textContent=prevExec?fmt(prevExec):'—';
-  document.getElementById('prev_ajuste').textContent=prevAjuste?fmt(prevAjuste):'—';
-  document.getElementById('prev_material').textContent=prevMat?fmt(prevMat):'—';
-  document.getElementById('prev_agendamento').textContent=prevAg?fmt(prevAg):'—';
-}
-
 // ══ SALVAR PROJETO ════════════════════════════════════════
 async function salvarProjeto(){
-  const fech=document.getElementById('n_fechamento').value,cliente=document.getElementById('n_cliente').value.trim(),ambiente=document.getElementById('n_ambiente').value.trim(),consultor=document.getElementById('n_consultor').value.trim(),prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10);
-  if(!cliente||!ambiente||!consultor||!fech||!prazoDias||prazoDias<1){showToast('Preencha Cliente, Ambiente, Consultor, Fechamento e Prazo');return;}
-  const med=document.getElementById('n_medicao_real').value,execF=document.getElementById('n_exec_final').value,ajF=document.getElementById('n_ajuste_fim').value,dispAdr=document.getElementById('n_disp_adriana').value,medAgendada=document.getElementById('n_medicao_agendada').value;
-  const p={cliente,ambiente,consultor,fechamento:fech,prazo_dias:prazoDias,prazo:med?addWorkdays(med,prazoDias):null,prev_medicao:addWorkdays(fech,5),medicao_agendada:medAgendada||null,prazo_retorno_conf:medAgendada?addWorkdays(medAgendada,3):null,medicao_real:med||null,medicao_hora_inicio:document.getElementById('n_medicao_hora_inicio').value||null,medicao_hora_fim:document.getElementById('n_medicao_hora_fim').value||null,exec_pegou:document.getElementById('n_exec_pegou').value||null,exec_listagem:document.getElementById('n_exec_listagem').value||null,prev_executivo:addWorkdays(med||addWorkdays(fech,5),5),exec_final:execF||null,aprovacao_enviou:document.getElementById('n_aprovacao_enviou').value||null,aprovacao_cliente:document.getElementById('n_aprovacao_cliente').value||null,ajuste_inicio:document.getElementById('n_ajuste_inicio').value||null,prev_ajuste:addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),ajuste_fim:ajF||null,sep_lista:document.getElementById('n_sep_lista').value||null,comprar:document.getElementById('n_comprar').value||null,prev_material:addWorkdays(ajF||addWorkdays(execF||addWorkdays(med||addWorkdays(fech,5),5),5),5),conferir:document.getElementById('n_conferir').value||null,corte_inicio:document.getElementById('n_corte_inicio').value||null,fitamento:document.getElementById('n_fitamento').value||null,disp_adriana:dispAdr||null,prev_agendamento:dispAdr?addWorkdays(dispAdr,10):null,agenda_entrega:document.getElementById('n_agenda_entrega').value||null,equipe:null,montagem_inicio:document.getElementById('n_montagem_inicio').value||null,montagem_entregue:document.getElementById('n_montagem_entregue').value||null,checklist_link:document.getElementById('n_checklist_link').value||null,criado:today()};
+  const cliente=document.getElementById('n_cliente').value.trim(),ambiente=document.getElementById('n_ambiente').value.trim(),consultor=document.getElementById('n_consultor').value.trim(),codigoSis=document.getElementById('n_codigo_sis').value.trim(),prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10);
+  if(!cliente||!ambiente||!consultor||!prazoDias||prazoDias<1){showToast('Preencha Cliente, Ambiente, Consultor e Prazo');return;}
+  const p={cliente,ambiente,consultor,codigo_sis:codigoSis||null,prazo_dias:prazoDias,fechamento:null,prazo:null,prev_medicao:null,
+    medicao_agendada:null,prazo_retorno_conf:null,medicao_real:null,medicao_hora_inicio:null,medicao_hora_fim:null,pasta_cliente:null,
+    exec_pegou:null,ag_aprov_cliente:null,aprovacao_enviou:null,em_analise:null,aprovacao_cliente:null,
+    enviado_ajustado:null,precisou_alteracao:null,finalizado_alteracao:null,
+    marlony_inicio_ajuste:null,enviado_de_volta:null,conferido:null,pacote_ref:null,
+    disp_adriana:null,agenda_entrega:null,apresentado_equipe:null,
+    montado_em:null,equipe:null,montagem_entregue:null,
+    criado:today()};
   showLoading(true);
   try{
     const created=await apiCreate(p);
     DB.unshift(created);sortDB();
-    // Auto-lançar no PCP
-    pcpAutoLancar(created);
     document.querySelectorAll('#page-novo input').forEach(el=>el.value='');
-    document.getElementById('n_prazo_dias').value='55';calcPreviews();
-    showToast('Projeto salvo com sucesso!');showPage('projetos');
+    document.getElementById('n_prazo_dias').value='55';
+    showToast('Projeto salvo! Agora marque "Fechado em" no painel do projeto.');showPage('projetos');
   }catch(e){showToast('Erro ao salvar: '+e.message);}
   showLoading(false);
 }
