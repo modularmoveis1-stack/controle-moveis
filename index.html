@@ -654,12 +654,45 @@ async function init(){
 function pedirPermissaoNotificacao(){
   if('Notification' in window && Notification.permission==='default'){Notification.requestPermission();}
 }
+let notifAtrasadoIds=new Set(),notifAgApIds=new Set(),_checagemInterval=null;
+function dispararNotificacao(titulo,corpo){
+  if('Notification' in window && Notification.permission==='granted'){
+    const n=new Notification(titulo,{body:corpo});
+    n.onclick=()=>{window.focus();};
+  }
+  showToast(titulo+': '+corpo);
+}
+function iniciarChecagemPeriodica(){
+  if(_checagemInterval)return;
+  _checagemInterval=setInterval(verificarNovidades,5*60*1000);
+}
+async function verificarNovidades(){
+  if(!usuarioLogado)return;
+  let nova;
+  try{nova=await apiList();}catch(e){return;}
+  DB=nova;sortDB();
+  const abertos=DB.filter(p=>!isEntregue(p));
+  const listaAtrasado=abertos.filter(p=>getStatus(p).key==='atrasado');
+  const listaAgAp=abertos.filter(isAgAprovacao);
+  const novosAtrasados=listaAtrasado.filter(p=>!notifAtrasadoIds.has(p.id));
+  const novosAgAp=listaAgAp.filter(p=>!notifAgApIds.has(p.id));
+  notifAtrasadoIds=new Set(listaAtrasado.map(p=>p.id));
+  notifAgApIds=new Set(listaAgAp.map(p=>p.id));
+  novosAtrasados.forEach(p=>dispararNotificacao('🔴 Novo Atraso',`${p.cliente} — ${p.ambiente} está atrasado.`));
+  novosAgAp.forEach(p=>dispararNotificacao('🤝 Aguardando Aprovação',`${p.cliente} — ${p.ambiente} foi enviado para aprovação do cliente.`));
+  if(document.getElementById('page-dashboard').style.display!=='none')renderDashboard();
+  if(document.getElementById('page-projetos').style.display!=='none')renderProjetos();
+}
 function mostrarNotificacaoLogin(){
-  if(sessionStorage.getItem('notifMostrada'))return;
+  if(sessionStorage.getItem('notifMostrada')){iniciarChecagemPeriodica();return;}
   sessionStorage.setItem('notifMostrada','1');
   const abertos=DB.filter(p=>!isEntregue(p));
-  const late=abertos.filter(p=>getStatus(p).key==='atrasado').length;
-  const agAp=abertos.filter(isAgAprovacao).length;
+  const listaAtrasado=abertos.filter(p=>getStatus(p).key==='atrasado');
+  const listaAgAp=abertos.filter(isAgAprovacao);
+  notifAtrasadoIds=new Set(listaAtrasado.map(p=>p.id));
+  notifAgApIds=new Set(listaAgAp.map(p=>p.id));
+  const late=listaAtrasado.length,agAp=listaAgAp.length;
+  iniciarChecagemPeriodica();
   if(late===0&&agAp===0)return;
   if('Notification' in window && Notification.permission==='granted'){
     if(late>0){const n=new Notification('🔴 Projetos Atrasados',{body:`${late} projeto${late>1?'s':''} atrasado${late>1?'s':''} no Controle de Projetos.`});n.onclick=()=>{window.focus();};}
