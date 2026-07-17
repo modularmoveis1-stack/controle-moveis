@@ -278,7 +278,7 @@ input[type="date"]{font-family:var(--mono);}
     <button class="btn btn-ghost" style="font-size:12px" onclick="reloadData()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Atualizar
     </button>
-    <button class="btn btn-primary" onclick="showPage('novo')">
+    <button class="btn btn-primary btn-novo-projeto" onclick="showPage('novo')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Projeto
     </button>
   </div>
@@ -355,8 +355,9 @@ input[type="date"]{font-family:var(--mono);}
               <div class="step-input-item"><label>Ambiente *</label><input type="text" id="n_ambiente" placeholder="Ex: Cozinha"></div>
               <div class="step-input-item"><label>Consultor *</label><input type="text" id="n_consultor" placeholder="Ex: Jean Veras"></div>
               <div class="step-input-item"><label>Prazo Entrega (dias úteis) *</label><input type="number" id="n_prazo_dias" value="55" min="1" step="1" placeholder="Ex: 55"></div>
+              <div class="step-input-item"><label>Fechado em *</label><input type="date" id="n_fechamento"></div>
             </div>
-            <p style="font-size:11px;color:var(--text3);margin-top:10px">Depois de salvar, marque "Fechado em" no painel do projeto para dar início ao fluxo.</p>
+            <p style="font-size:11px;color:var(--text3);margin-top:10px">Depois de salvar, marque "Agendado em" no painel do projeto assim que houver data com o cliente.</p>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
             <button class="btn btn-ghost" onclick="showPage('projetos')">Cancelar</button>
@@ -825,20 +826,35 @@ function renderProjetos(){
 
 // ══ DETALHE ═══════════════════════════════════════════════
 // ══ PERMISSÕES POR ETAPA (quem pode marcar/editar) ═════════
-function podeEditar(owner){return usuarioLogado==='Admin'||usuarioLogado===owner;}
+const PESSOA_COR={Jean:['79,123,255','#4f7bff'],Adriana:['20,184,166','#14b8a6'],Mateus:['168,85,247','#a855f7'],Lucas:['249,115,22','#f97316'],Marlony:['245,158,11','#f59e0b'],Helder:['34,197,94','#22c55e']};
+function podeEditar(owner){
+  if(Array.isArray(owner))return usuarioLogado==='Admin'||owner.includes(usuarioLogado);
+  return usuarioLogado==='Admin'||usuarioLogado===owner;
+}
+function nomeOwner(owner){return Array.isArray(owner)?owner.join(' / '):owner;}
 function stepRow(id,p,key,label,owner){
   const val=p[key],can=podeEditar(owner);
   let box;
   if(val){
     box=can
-      ?`<span style="cursor:pointer" title="Clique para desmarcar (${owner})" onclick="if(confirm('Desmarcar &quot;${label}&quot;?'))updateField(${id},'${key}',null)"><span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span></span>`
+      ?`<span style="cursor:pointer" title="Clique para desmarcar (${nomeOwner(owner)})" onclick="if(confirm('Desmarcar &quot;${label}&quot;?'))updateField(${id},'${key}',null)"><span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span></span>`
       :`<span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span>`;
   }else if(can){
     box=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onclick="updateField(${id},'${key}',today())" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:var(--text3)">marcar</span></label>`;
   }else{
-    box=`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(${owner})</span></span>`;
+    box=`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(${nomeOwner(owner)})</span></span>`;
   }
   return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${box}</div></div>`;
+}
+function dateRow(id,p,key,label,owner){
+  const can=podeEditar(owner),val=p[key]?(toISO(p[key])||''):'';
+  let input;
+  if(can){
+    input=`<input type="date" value="${val}" onchange="updateField(${id},'${key}',this.value)" style="width:135px;font-size:12px;padding:4px 8px">`;
+  }else{
+    input=val?`<span style="font-family:var(--mono);font-size:12px;color:var(--text2)">${fmt(val)}</span>`:`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(${nomeOwner(owner)})</span></span>`;
+  }
+  return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${input}</div></div>`;
 }
 function typedRow(id,p,key,label,owner,type,placeholder){
   const can=podeEditar(owner),val=p[key]||'';
@@ -855,7 +871,8 @@ function typedRow(id,p,key,label,owner,type,placeholder){
   return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${input}</div></div>`;
 }
 function stepGroup(title,owner,rowsHtml){
-  return`<div class="detail-section" style="margin-bottom:12px"><div class="detail-section-header">${title} <span style="font-size:10px;opacity:.8">(${owner})</span></div>${rowsHtml}</div>`;
+  const cor=PESSOA_COR[Array.isArray(owner)?owner[0]:owner]||['139,144,168','#8b90a8'];
+  return`<div class="detail-section" style="margin-bottom:12px;border-color:rgba(${cor[0]},.3)"><div class="detail-section-header" style="background:rgba(${cor[0]},.15);color:${cor[1]}">${title} <span style="font-size:10px;opacity:.8">(${nomeOwner(owner).toUpperCase()})</span></div>${rowsHtml}</div>`;
 }
 
 function openDetail(id){
@@ -898,15 +915,15 @@ function openDetail(id){
     `+typedRow(id,p,'codigo_sis','Código SIS','Jean')+`
     `+typedRow(id,p,'prazo_dias','Prazo Entrega (dias úteis)','Jean','number')+`
     <div class="step-row"><div class="step-label">Prazo Final</div><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${p.prazo?(diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'):'var(--text3)'}">${p.prazo?fmt(p.prazo):'aguarda medição real'}</span></div>
-    `+stepRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
-    stepGroup('📅 Agendamento','Adriana', stepRow(id,p,'medicao_agendada','Agendado em','Adriana'))+
+    `+dateRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
+    stepGroup('📅 Agendamento de Conferência',['Jean','Adriana'], dateRow(id,p,'medicao_agendada','Agendado em',['Jean','Adriana']))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
     stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+typedRow(id,p,'medicao_hora_inicio','Hora Início','Mateus','time')+typedRow(id,p,'medicao_hora_fim','Hora Término','Mateus','time')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus'))+
     stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
     stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
     stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
     stepGroup('🏭 PCP — Ajuste','Marlony', stepRow(id,p,'marlony_inicio_ajuste','Início Ajuste','Marlony')+stepRow(id,p,'enviado_de_volta','Enviado de Volta','Marlony')+stepRow(id,p,'conferido','Conferido','Marlony')+typedRow(id,p,'pacote_ref','Referência do Pacote','Marlony','text','Ex: PACOTE 0107'))+
-    stepGroup('🚚 Recebimento e Agenda','Adriana', stepRow(id,p,'disp_adriana','Recebido Fábrica','Adriana')+stepRow(id,p,'agenda_entrega','Agendado Para','Adriana'))+
+    stepGroup('🚚 Recebimento e Agenda','Adriana', stepRow(id,p,'disp_adriana','Recebido Fábrica','Adriana')+dateRow(id,p,'agenda_entrega','Agendado Para (Montagem)','Adriana'))+
     stepGroup('📣 Apresentação','Jean', stepRow(id,p,'apresentado_equipe','Apresentado Equipe','Jean'))+
     stepGroup('🔧 Montagem','Helder', stepRow(id,p,'montado_em','Montado em','Helder')+typedRow(id,p,'equipe','Equipe','Helder','text','Ex: Tadeu e Lucas')+stepRow(id,p,'montagem_entregue','Checklist Finalizado','Helder'))+
     `<div class="detail-section ds-fluxo" style="margin-bottom:12px"><div class="detail-section-header">⏱ Fluxo de Tempo</div>
@@ -923,6 +940,7 @@ async function updateField(id,key,val){
   const p=DB.find(x=>x.id==id);if(!p)return;
   const patch={};
   if(key==='prazo_dias'){const n=parseInt(val,10);patch.prazo_dias=n>0?n:null;}else patch[key]=val===''?null:val;
+  if(key==='fechamento')patch.prev_medicao=val?addWorkdays(val,5):null;
   if(key==='medicao_real'){patch.prev_executivo=addWorkdays(val||p.prev_medicao,5);patch.prazo=val&&p.prazo_dias?addWorkdays(val,p.prazo_dias):null;}
   if(key==='medicao_agendada')patch.prazo_retorno_conf=val?addWorkdays(val,3):null;
   if(key==='prazo_dias'){patch.prazo=p.medicao_real&&patch.prazo_dias?addWorkdays(p.medicao_real,patch.prazo_dias):null;}
@@ -1209,6 +1227,7 @@ function irParaEntregues(){
 
 const pageTitles={dashboard:'Dashboard',projetos:'Projetos',novo:'Novo Projeto',pcp:'🏭 PCP — Controle de Produção'};
 function showPage(name){
+  if(name==='novo'&&!(usuarioLogado==='Jean'||usuarioLogado==='Admin')){showToast('Somente Jean ou Admin podem lançar novos projetos.');name='dashboard';}
   ['dashboard','projetos','novo','pcp'].forEach(p=>{
     const el=document.getElementById('page-'+p);if(el)el.style.display=p===name?'':'none';
     document.getElementById('nav-'+p)?.classList.toggle('active',p===name);
@@ -1219,8 +1238,12 @@ function showPage(name){
   document.getElementById('mainTopbar').classList.toggle('pcp-active',name==='pcp');
   if(name==='dashboard')renderDashboard();
   if(name==='projetos')renderProjetos();
-  if(name==='novo')calcPreviews();
   if(name==='pcp')renderPCP();
+}
+function atualizarVisibilidadeNovo(){
+  const pode=usuarioLogado==='Jean'||usuarioLogado==='Admin';
+  const nav=document.getElementById('nav-novo');if(nav)nav.style.display=pode?'':'none';
+  document.querySelectorAll('.btn-novo-projeto').forEach(b=>b.style.display=pode?'':'none');
 }
 
 // ══ RELATÓRIO ════════════════════════════════════════════
@@ -1357,9 +1380,9 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 // ══ FORM PREVIEWS ═════════════════════════════════════════
 // ══ SALVAR PROJETO ════════════════════════════════════════
 async function salvarProjeto(){
-  const cliente=document.getElementById('n_cliente').value.trim(),ambiente=document.getElementById('n_ambiente').value.trim(),consultor=document.getElementById('n_consultor').value.trim(),codigoSis=document.getElementById('n_codigo_sis').value.trim(),prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10);
-  if(!cliente||!ambiente||!consultor||!prazoDias||prazoDias<1){showToast('Preencha Cliente, Ambiente, Consultor e Prazo');return;}
-  const p={cliente,ambiente,consultor,codigo_sis:codigoSis||null,prazo_dias:prazoDias,fechamento:null,prazo:null,prev_medicao:null,
+  const cliente=document.getElementById('n_cliente').value.trim(),ambiente=document.getElementById('n_ambiente').value.trim(),consultor=document.getElementById('n_consultor').value.trim(),codigoSis=document.getElementById('n_codigo_sis').value.trim(),prazoDias=parseInt(document.getElementById('n_prazo_dias').value,10),fech=document.getElementById('n_fechamento').value;
+  if(!cliente||!ambiente||!consultor||!prazoDias||prazoDias<1||!fech){showToast('Preencha Cliente, Ambiente, Consultor, Prazo e Fechado em');return;}
+  const p={cliente,ambiente,consultor,codigo_sis:codigoSis||null,prazo_dias:prazoDias,fechamento:fech,prazo:null,prev_medicao:addWorkdays(fech,5),
     medicao_agendada:null,prazo_retorno_conf:null,medicao_real:null,medicao_hora_inicio:null,medicao_hora_fim:null,pasta_cliente:null,
     exec_pegou:null,ag_aprov_cliente:null,aprovacao_enviou:null,em_analise:null,aprovacao_cliente:null,
     enviado_ajustado:null,precisou_alteracao:null,finalizado_alteracao:null,
@@ -1384,13 +1407,13 @@ let usuarioLogado=null;
 function fazerLogin(){
   const usuario=document.getElementById('login_usuario').value,senha=document.getElementById('login_senha').value,msg=document.getElementById('login_msg');
   if(!usuario){msg.textContent='Selecione seu nome.';return;}if(!senha){msg.textContent='Digite sua senha.';return;}
-  if(USUARIOS[usuario]&&USUARIOS[usuario]===senha){usuarioLogado=usuario;sessionStorage.setItem('usuario',usuario);msg.textContent='';document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=usuario;document.getElementById('userAvatar').textContent=usuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}
+  if(USUARIOS[usuario]&&USUARIOS[usuario]===senha){usuarioLogado=usuario;atualizarVisibilidadeNovo();sessionStorage.setItem('usuario',usuario);msg.textContent='';document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=usuario;document.getElementById('userAvatar').textContent=usuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}
   else{msg.textContent='Senha incorreta.';document.getElementById('login_senha').value='';document.getElementById('login_senha').focus();}
 }
 function fazerLogout(){usuarioLogado=null;sessionStorage.removeItem('usuario');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('userBadge').style.display='none';document.getElementById('login_senha').value='';document.getElementById('login_msg').textContent='';DB=[];renderDashboard();renderProjetos();}
 
 const sessaoUsuario=sessionStorage.getItem('usuario');
-if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
+if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;atualizarVisibilidadeNovo();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
 renderDashboard();
 </script>
 </body>
