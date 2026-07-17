@@ -608,6 +608,7 @@ let pcpProxId=100;
 // ══ DATAS ════════════════════════════════════════════════
 function toISO(str){if(!str)return null;if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.split('T')[0];try{const d=new Date(str);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];}catch(e){}return null;}
 function today(){return new Date().toISOString().split('T')[0];}
+function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function fmt(str){if(!str)return'—';if(/^\d{4}-\d{2}-\d{2}/.test(str)){const[y,m,d]=str.split('-');return`${d}/${m}/${y}`;}try{const d=new Date(str);if(!isNaN(d.getTime()))return`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}catch(e){}return'—';}
 function diffDays(prazo){if(!prazo)return null;const ip=toISO(prazo);if(!ip)return null;const t=new Date(today()+'T12:00:00'),p=new Date(ip+'T12:00:00');return Math.round((p-t)/86400000);}
 function addWorkdays(dateStr,days){if(!dateStr)return null;const iso=toISO(dateStr);if(!iso)return null;let d=new Date(iso+'T12:00:00'),added=0,dir=days>0?1:-1,abs=Math.abs(days);while(added<abs){d.setDate(d.getDate()+dir);const dow=d.getDay();if(dow!==0&&dow!==6)added++;}return d.toISOString().split('T')[0];}
@@ -648,6 +649,28 @@ async function init(){
   try{DB=await apiList();sortDB();updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}
   showLoading(false);
   renderDashboard();renderProjetos();
+  mostrarNotificacaoLogin();
+}
+function mostrarNotificacaoLogin(){
+  if(sessionStorage.getItem('notifMostrada'))return;
+  sessionStorage.setItem('notifMostrada','1');
+  const abertos=DB.filter(p=>!isEntregue(p));
+  const late=abertos.filter(p=>getStatus(p).key==='atrasado').length;
+  const agAp=abertos.filter(isAgAprovacao).length;
+  if(late===0&&agAp===0)return;
+  const old=document.getElementById('loginNotif');if(old)old.remove();
+  const div=document.createElement('div');
+  div.id='loginNotif';
+  div.style.cssText='position:fixed;top:20px;right:20px;z-index:9999;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.5)';
+  div.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <b style="font-size:13px">🔔 Olá, ${usuarioLogado}!</b>
+      <span style="cursor:pointer;color:var(--text3);font-size:16px;padding:0 4px" onclick="document.getElementById('loginNotif').remove()">✕</span>
+    </div>
+    ${late>0?`<div style="cursor:pointer;padding:6px 0;font-size:12px;color:var(--red)" onclick="document.getElementById('loginNotif').remove();abrirModal('atrasado')">🔴 ${late} projeto${late>1?'s':''} atrasado${late>1?'s':''} — clique para ver</div>`:''}
+    ${agAp>0?`<div style="cursor:pointer;padding:6px 0;font-size:12px;color:var(--purple)" onclick="document.getElementById('loginNotif').remove();abrirModal('ag_aprovacao')">🤝 ${agAp} projeto${agAp>1?'s':''} aguardando aprovação do cliente — clique para ver</div>`:''}
+  `;
+  document.body.appendChild(div);
 }
 async function reloadData(){showLoading(true);try{DB=await apiList();sortDB();updateSyncStatus();renderDashboard();renderProjetos();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
 function updateSyncStatus(){const el=document.getElementById('syncStatus');const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});el.textContent=CFG.offlineMode?'⚠ modo offline':`✓ sync ${now}`;}
@@ -693,17 +716,18 @@ function getStatus(p){
   return{key:'prazo',label:'🟢 No prazo',cls:'badge-green'};
 }
 function isEntregue(p){return!!(p.montagem_entregue);}
+function isAgAprovacao(p){return!!(p.aprovacao_enviou&&!p.aprovacao_cliente);}
 function progresso(p){const steps=['medicao_real','aprovacao_cliente','conferido','agenda_entrega','montagem_entregue'];return Math.round((steps.filter(s=>p[s]).length/steps.length)*100);}
 
 // ══ MODAL LISTA ═══════════════════════════════════════════
 document.getElementById('mp-fechar').onclick=function(){document.getElementById('mp-overlay').classList.remove('aberto');};
 document.getElementById('mp-overlay').onclick=function(e){if(e.target===this)this.classList.remove('aberto');};
 function abrirModal(alvo){
-  const labels={atrasado:'🔴 Atrasados',atencao:'🟡 Em Atenção',prazo:'🟢 No Prazo',ag_medicao:'📐 Aguardando Medição',entregue_ok:'✅ Entregues no prazo',entregue_atr:'⚠️ Entregues fora do prazo'};
-  const lista=DB.filter(p=>getStatus(p).key===alvo);
+  const labels={atrasado:'🔴 Atrasados',atencao:'🟡 Em Atenção',prazo:'🟢 No Prazo',ag_medicao:'📐 Aguardando Medição',ag_aprovacao:'🤝 Aguardando Aprovação Cliente',entregue_ok:'✅ Entregues no prazo',entregue_atr:'⚠️ Entregues fora do prazo'};
+  const lista=alvo==='ag_aprovacao'?DB.filter(p=>!isEntregue(p)&&isAgAprovacao(p)):DB.filter(p=>getStatus(p).key===alvo);
   document.getElementById('mp-titulo').textContent=(labels[alvo]||'Projetos')+' ('+lista.length+')';
   document.getElementById('mp-corpo').innerHTML=lista.length
-    ?lista.map(p=>{const diff=diffDays(p.prazo);const diasTxt=diff===null?'—':diff<0?`${diff}d atrasado`:diff===0?'hoje':`+${diff}d`;const cor=alvo==='atrasado'?'color:#fca5a5':alvo==='atencao'?'color:#fcd34d':alvo==='ag_medicao'?'color:var(--teal)':'color:#86efac';return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td>${p.consultor}</td><td style="font-family:monospace">${p.prazo?fmt(p.prazo):'—'}</td><td style="font-family:monospace;font-weight:600;${cor}">${diasTxt}</td></tr>`;}).join('')
+    ?lista.map(p=>{const diff=diffDays(p.prazo);const diasTxt=diff===null?'—':diff<0?`${diff}d atrasado`:diff===0?'hoje':`+${diff}d`;const cor=alvo==='atrasado'?'color:#fca5a5':alvo==='atencao'?'color:#fcd34d':alvo==='ag_medicao'?'color:var(--teal)':alvo==='ag_aprovacao'?'color:var(--purple)':'color:#86efac';return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td>${p.consultor}</td><td style="font-family:monospace">${p.prazo?fmt(p.prazo):'—'}</td><td style="font-family:monospace;font-weight:600;${cor}">${diasTxt}</td></tr>`;}).join('')
     :'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text2)">Nenhum projeto.</td></tr>';
   document.getElementById('mp-overlay').classList.add('aberto');
 }
@@ -716,6 +740,7 @@ function renderDashboard(){
   const att=abertos.filter(p=>getStatus(p).key==='atencao').length;
   const late=abertos.filter(p=>getStatus(p).key==='atrasado').length;
   const agm=abertos.filter(p=>getStatus(p).key==='ag_medicao').length;
+  const agAp=abertos.filter(isAgAprovacao).length;
   const eok=entregues.filter(p=>getStatus(p).key==='entregue_ok').length;
   const eatr=entregues.filter(p=>getStatus(p).key==='entregue_atr').length;
 
@@ -729,7 +754,9 @@ function renderDashboard(){
     <div class="stat-card clickable-red" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='atrasado';renderProjetos();abrirModal('atrasado');},120)">
       <div class="stat-label">Atrasados</div><div class="stat-value red">${late}</div></div>
     <div class="stat-card clickable-teal" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='ag_medicao';renderProjetos();abrirModal('ag_medicao');},120)">
-      <div class="stat-label">📐 Ag. Medição</div><div class="stat-value teal">${agm}</div></div>`;
+      <div class="stat-label">📐 Ag. Medição</div><div class="stat-value teal">${agm}</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="abrirModal('ag_aprovacao')">
+      <div class="stat-label">🤝 Ag. Aprovação Cliente</div><div class="stat-value" style="color:var(--purple)">${agAp}</div></div>`;
 
   const bn=document.getElementById('dash-banner');
   if(late>0){bn.className='mp-banner atrasado';bn.style.display='block';bn.innerHTML=`⚠ <b>${late} projeto${late>1?'s':''} atrasado${late>1?'s':''}</b> — clique para ver`;bn.onclick=()=>abrirModal('atrasado');}
@@ -846,6 +873,20 @@ function stepRow(id,p,key,label,owner){
   }
   return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${box}</div></div>`;
 }
+function timeCheckRow(id,p,key,label,owner){
+  const val=p[key],can=podeEditar(owner);
+  let box;
+  if(val){
+    box=can
+      ?`<span style="cursor:pointer" title="Clique para desmarcar (${nomeOwner(owner)})" onclick="if(confirm('Desmarcar &quot;${label}&quot;?'))updateField(${id},'${key}',null)"><span style="color:var(--green);font-weight:600">✅ ${val}</span></span>`
+      :`<span style="color:var(--green);font-weight:600">✅ ${val}</span>`;
+  }else if(can){
+    box=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onclick="updateField(${id},'${key}',nowTime())" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:var(--text3)">marcar</span></label>`;
+  }else{
+    box=`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(${nomeOwner(owner)})</span></span>`;
+  }
+  return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${box}</div></div>`;
+}
 function dateRow(id,p,key,label,owner){
   const can=podeEditar(owner),val=p[key]?(toISO(p[key])||''):'';
   let input;
@@ -918,7 +959,7 @@ function openDetail(id){
     `+dateRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
     stepGroup('📅 Agendamento de Conferência',['Jean','Adriana'], dateRow(id,p,'medicao_agendada','Agendado em',['Jean','Adriana']))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
-    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+typedRow(id,p,'medicao_hora_inicio','Hora Início','Mateus','time')+typedRow(id,p,'medicao_hora_fim','Hora Término','Mateus','time')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus'))+
+    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+timeCheckRow(id,p,'medicao_hora_inicio','Hora Início','Mateus')+timeCheckRow(id,p,'medicao_hora_fim','Hora Término','Mateus')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus'))+
     stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
     stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
     stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
