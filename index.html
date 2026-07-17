@@ -651,6 +651,9 @@ async function init(){
   renderDashboard();renderProjetos();
   mostrarNotificacaoLogin();
 }
+function pedirPermissaoNotificacao(){
+  if('Notification' in window && Notification.permission==='default'){Notification.requestPermission();}
+}
 function mostrarNotificacaoLogin(){
   if(sessionStorage.getItem('notifMostrada'))return;
   sessionStorage.setItem('notifMostrada','1');
@@ -658,6 +661,10 @@ function mostrarNotificacaoLogin(){
   const late=abertos.filter(p=>getStatus(p).key==='atrasado').length;
   const agAp=abertos.filter(isAgAprovacao).length;
   if(late===0&&agAp===0)return;
+  if('Notification' in window && Notification.permission==='granted'){
+    if(late>0){const n=new Notification('🔴 Projetos Atrasados',{body:`${late} projeto${late>1?'s':''} atrasado${late>1?'s':''} no Controle de Projetos.`});n.onclick=()=>{window.focus();};}
+    if(agAp>0){const n2=new Notification('🤝 Aguardando Aprovação',{body:`${agAp} projeto${agAp>1?'s':''} aguardando aprovação do cliente.`});n2.onclick=()=>{window.focus();};}
+  }
   const old=document.getElementById('loginNotif');if(old)old.remove();
   const div=document.createElement('div');
   div.id='loginNotif';
@@ -1448,13 +1455,13 @@ let usuarioLogado=null;
 function fazerLogin(){
   const usuario=document.getElementById('login_usuario').value,senha=document.getElementById('login_senha').value,msg=document.getElementById('login_msg');
   if(!usuario){msg.textContent='Selecione seu nome.';return;}if(!senha){msg.textContent='Digite sua senha.';return;}
-  if(USUARIOS[usuario]&&USUARIOS[usuario]===senha){usuarioLogado=usuario;atualizarVisibilidadeNovo();sessionStorage.setItem('usuario',usuario);msg.textContent='';document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=usuario;document.getElementById('userAvatar').textContent=usuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}
+  if(USUARIOS[usuario]&&USUARIOS[usuario]===senha){usuarioLogado=usuario;atualizarVisibilidadeNovo();pedirPermissaoNotificacao();sessionStorage.setItem('usuario',usuario);msg.textContent='';document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=usuario;document.getElementById('userAvatar').textContent=usuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}
   else{msg.textContent='Senha incorreta.';document.getElementById('login_senha').value='';document.getElementById('login_senha').focus();}
 }
 function fazerLogout(){usuarioLogado=null;sessionStorage.removeItem('usuario');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('userBadge').style.display='none';document.getElementById('login_senha').value='';document.getElementById('login_msg').textContent='';DB=[];renderDashboard();renderProjetos();}
 
 const sessaoUsuario=sessionStorage.getItem('usuario');
-if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;atualizarVisibilidadeNovo();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
+if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;atualizarVisibilidadeNovo();pedirPermissaoNotificacao();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
 renderDashboard();
 </script>
 </body>
