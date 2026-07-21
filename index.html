@@ -877,9 +877,14 @@ function podeEditar(owner){
 }
 function nomeOwner(owner){return Array.isArray(owner)?owner.join(' / '):owner;}
 function stepRow(id,p,key,label,owner){
-  const val=p[key],can=podeEditar(owner);
+  const val=p[key],can=podeEditar(owner),isAdmin=usuarioLogado==='Admin';
   let box;
-  if(val){
+  if(isAdmin){
+    box=`<div style="display:flex;align-items:center;gap:6px">
+      <input type="date" value="${val?toISO(val):''}" onchange="updateField(${id},'${key}',this.value)" style="font-size:12px;padding:3px 6px;width:140px">
+      ${val?`<button onclick="if(confirm('Limpar &quot;${label}&quot;?'))updateField(${id},'${key}',null)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px" title="Limpar">✕</button>`:''}
+    </div>`;
+  }else if(val){
     box=can
       ?`<span style="cursor:pointer" title="Clique para desmarcar (${nomeOwner(owner)})" onclick="if(confirm('Desmarcar &quot;${label}&quot;?'))updateField(${id},'${key}',null)"><span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span></span>`
       :`<span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span>`;
@@ -1000,17 +1005,29 @@ async function toggleChecklistItem(id,k){
   obj[k]=!obj[k];
   await updateField(id,'conf_checklist',JSON.stringify(obj));
 }
+async function updateFields(id,patch){
+  const p=DB.find(x=>x.id==id);if(!p)return;
+  showLoading(true);
+  try{const updated=await apiUpdate(id,patch);const idx=DB.findIndex(x=>x.id==id);if(idx!==-1)DB[idx]=updated;sortDB();openDetail(id);renderDashboard();renderProjetos();}
+  catch(e){showToast('Erro ao atualizar: '+e.message);}
+  showLoading(false);
+}
 async function setChecklistSemConferencia(id,val){
   if(!podeEditar('Mateus'))return;
   const p=DB.find(x=>x.id==id);if(!p)return;
   let obj={};
   try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
   obj.sem_conferencia=val;
-  await updateField(id,'conf_checklist',JSON.stringify(obj));
-  if(val&&!p.medicao_real){
-    await updateField(id,'medicao_real',today());
-    setTimeout(()=>showToast('Prazo iniciado automaticamente (móvel solto).'),200);
+  const patch={conf_checklist:JSON.stringify(obj)};
+  const marcouAgora=val&&!p.medicao_real;
+  if(marcouAgora){
+    const hoje=today();
+    patch.medicao_real=hoje;
+    patch.prev_executivo=addWorkdays(hoje,5);
+    patch.prazo=p.prazo_dias?addWorkdays(hoje,p.prazo_dias):null;
   }
+  await updateFields(id,patch);
+  if(marcouAgora)setTimeout(()=>showToast('Prazo iniciado automaticamente (móvel solto).'),200);
 }
 function stepGroup(title,owner,rowsHtml){
   const cor=PESSOA_COR[Array.isArray(owner)?owner[0]:owner]||['139,144,168','#8b90a8'];
