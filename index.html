@@ -963,22 +963,30 @@ function checklistConferenciaHTML(id,p){
   const can=podeEditar('Mateus');
   let obj={};
   try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
+  const semConf=!!obj.sem_conferencia;
   const total=CHECKLIST_CONFERENCIA.length;
   const feitos=CHECKLIST_CONFERENCIA.reduce((n,_,i)=>n+(obj[i+1]?1:0),0);
   const completo=feitos===total;
   const itens=CHECKLIST_CONFERENCIA.map((label,i)=>{
     const k=i+1,checked=!!obj[k];
-    return`<label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.35;${can?'cursor:pointer':'cursor:default'};color:${checked?'var(--green)':'var(--text2)'}">
-      <input type="checkbox" ${checked?'checked':''} ${can?'':'disabled'} onclick="toggleChecklistItem(${id},${k})" style="width:14px;height:14px;margin-top:1px;flex-shrink:0;${can?'cursor:pointer':''}">
+    const trava=!can||semConf;
+    return`<label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.35;${trava?'cursor:default;opacity:.4':'cursor:pointer'};color:${checked?'var(--green)':'var(--text2)'}">
+      <input type="checkbox" ${checked?'checked':''} ${trava?'disabled':''} onclick="toggleChecklistItem(${id},${k})" style="width:14px;height:14px;margin-top:1px;flex-shrink:0;${trava?'':'cursor:pointer'}">
       <span>${checked?'✅ ':''}${label}</span>
     </label>`;
   }).join('');
   return`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:2px 0 12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <span style="font-size:11px;font-weight:600;color:var(--text2)">📋 Checklist de Conferência</span>
-      <span style="font-size:11px;font-weight:700;color:${completo?'var(--green)':'var(--text3)'}">${feitos}/${total}${completo?' ✅':''}</span>
+      <span style="font-size:11px;font-weight:700;color:${completo&&!semConf?'var(--green)':'var(--text3)'}">${semConf?'—':`${feitos}/${total}${completo?' ✅':''}`}</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">${itens}</div>
+
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:${semConf?'#f97316':'var(--text2)'};${can?'cursor:pointer':'cursor:default'};margin-bottom:10px;padding:6px 8px;background:${semConf?'rgba(249,115,22,.1)':'transparent'};border-radius:6px">
+      <input type="checkbox" ${semConf?'checked':''} ${can?'':'disabled'} onclick="setChecklistSemConferencia(${id},this.checked)" style="width:14px;height:14px;${can?'cursor:pointer':''}">
+      🔧 Não houve conferência (móvel solto)
+    </label>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;${semConf?'opacity:.4':''}">${itens}</div>
     <details style="margin-top:10px"><summary style="font-size:10px;color:var(--text3);cursor:pointer">Ambiente impróprio para medição</summary>
       <div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.5">${CHECKLIST_CONFERENCIA_EXCECOES.map(t=>'• '+t).join('<br>')}</div>
     </details>
@@ -991,6 +999,18 @@ async function toggleChecklistItem(id,k){
   try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
   obj[k]=!obj[k];
   await updateField(id,'conf_checklist',JSON.stringify(obj));
+}
+async function setChecklistSemConferencia(id,val){
+  if(!podeEditar('Mateus'))return;
+  const p=DB.find(x=>x.id==id);if(!p)return;
+  let obj={};
+  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
+  obj.sem_conferencia=val;
+  await updateField(id,'conf_checklist',JSON.stringify(obj));
+  if(val&&!p.medicao_real){
+    await updateField(id,'medicao_real',today());
+    setTimeout(()=>showToast('Prazo iniciado automaticamente (móvel solto).'),200);
+  }
 }
 function stepGroup(title,owner,rowsHtml){
   const cor=PESSOA_COR[Array.isArray(owner)?owner[0]:owner]||['139,144,168','#8b90a8'];
