@@ -951,6 +951,70 @@ function typedRow(id,p,key,label,owner,type,placeholder){
   }
   return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${input}</div></div>`;
 }
+// ══ CHECKLIST DE CONFERÊNCIA (Mateus) ═══════════════════════
+const CHECKLIST_CONFERENCIA=[
+  "Paredes e colunas (larguras e pé direito)",
+  "Portas, janelas e soleiras",
+  "Tampos ou móveis existentes que participam do projeto (altura, largura, profundidade, medida de portas/frentes ou gavetas)",
+  "Degraus ou desníveis de pisos e rodapé",
+  "Base de alvenaria",
+  "Tampos de granito/mármore ou outros (largura, profundidade, mão francesa)",
+  "Rodapés, rodateto e sancas",
+  "Pontos de energia elétrica",
+  "Caixas elétricas de disjuntores",
+  "Pontos de internet/TV/telefone/som",
+  "Localização do ar condicionado",
+  "Pontos de entrada d’água e registros",
+  "Pontos de tubulação de esgoto (sifão)",
+  "Sentido de abertura das esquadrias",
+  "Espaço e localização do cortineiro",
+  "Limites de acabamento em revestimento em parede/teto (cozinha, WC, sala)",
+  "Fotos frontais de cada parede do ambiente (fechadas e aberta) + fotos da planta do ambiente",
+  "Vídeo panorâmico descritivo do ambiente, explicando detalhes parede a parede",
+  "Foto e descrição de defeitos no ambiente (quebrados, riscos, manchas, etc.)",
+  "Medidas de elevador, escadas, portas e vãos",
+  "Verificar horários permitidos de trabalho",
+  "Registrar o tipo de parede (alvenaria, drywall ou gesso)",
+  "Portas de passagem: medida do vão, profundidade da alvenaria, altura e profundidade do rodapé do vão"
+];
+const CHECKLIST_CONFERENCIA_EXCECOES=[
+  "Ambiente sem piso, gesso e esquadrias",
+  "Faltando bancadas de mármore, granito ou outras",
+  "Não medir área úmida sem sifão instalado e torneira no banheiro"
+];
+function checklistConferenciaHTML(id,p){
+  const can=podeEditar('Mateus');
+  let obj={};
+  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
+  const total=CHECKLIST_CONFERENCIA.length;
+  const feitos=CHECKLIST_CONFERENCIA.reduce((n,_,i)=>n+(obj[i+1]?1:0),0);
+  const completo=feitos===total;
+  const itens=CHECKLIST_CONFERENCIA.map((label,i)=>{
+    const k=i+1,checked=!!obj[k];
+    return`<label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.35;${can?'cursor:pointer':'cursor:default'};color:${checked?'var(--green)':'var(--text2)'}">
+      <input type="checkbox" ${checked?'checked':''} ${can?'':'disabled'} onclick="toggleChecklistItem(${id},${k})" style="width:14px;height:14px;margin-top:1px;flex-shrink:0;${can?'cursor:pointer':''}">
+      <span>${checked?'✅ ':''}${label}</span>
+    </label>`;
+  }).join('');
+  return`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:2px 0 12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:600;color:var(--text2)">📋 Checklist de Conferência</span>
+      <span style="font-size:11px;font-weight:700;color:${completo?'var(--green)':'var(--text3)'}">${feitos}/${total}${completo?' ✅':''}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">${itens}</div>
+    <details style="margin-top:10px"><summary style="font-size:10px;color:var(--text3);cursor:pointer">Ambiente impróprio para medição</summary>
+      <div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.5">${CHECKLIST_CONFERENCIA_EXCECOES.map(t=>'• '+t).join('<br>')}</div>
+    </details>
+  </div>`;
+}
+async function toggleChecklistItem(id,k){
+  if(!podeEditar('Mateus'))return;
+  const p=DB.find(x=>x.id==id);if(!p)return;
+  let obj={};
+  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
+  obj[k]=!obj[k];
+  await updateField(id,'conf_checklist',JSON.stringify(obj));
+}
 function stepGroup(title,owner,rowsHtml){
   const cor=PESSOA_COR[Array.isArray(owner)?owner[0]:owner]||['139,144,168','#8b90a8'];
   return`<div class="detail-section" style="margin-bottom:12px;border-color:rgba(${cor[0]},.3)"><div class="detail-section-header" style="background:rgba(${cor[0]},.15);color:${cor[1]}">${title} <span style="font-size:10px;opacity:.8">(${nomeOwner(owner).toUpperCase()})</span></div>${rowsHtml}</div>`;
@@ -999,7 +1063,7 @@ function openDetail(id){
     `+dateRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
     stepGroup('📅 Agendamento de Conferência',['Jean','Adriana'], dateRow(id,p,'medicao_agendada','Agendado em',['Jean','Adriana']))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
-    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+timeCheckRow(id,p,'medicao_hora_inicio','Hora Início','Mateus')+timeCheckRow(id,p,'medicao_hora_fim','Hora Término','Mateus')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus'))+
+    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+timeCheckRow(id,p,'medicao_hora_inicio','Hora Início','Mateus')+timeCheckRow(id,p,'medicao_hora_fim','Hora Término','Mateus')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus')+checklistConferenciaHTML(id,p))+
     stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
     stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
     stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
