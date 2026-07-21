@@ -247,7 +247,7 @@ input[type="date"]{font-family:var(--mono);}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Projetos</span>
     </button>
     <button class="nav-item pcp-nav" onclick="showPage('pcp')" id="nav-pcp">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/></svg><span>🏭 PCP</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/></svg><span>🏭 Fábrica</span>
     </button>
     <button class="nav-item" onclick="irParaEntregues()" id="nav-entregues">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>✅ Entregues</span>
@@ -366,7 +366,7 @@ input[type="date"]{font-family:var(--mono);}
     <div id="page-pcp" style="display:none">
       <div class="pcp-header">
         <div>
-          <h2>🏭 PCP — Controle de Produção</h2>
+          <h2>🏭 Fábrica — Controle de Produção</h2>
           <div class="sub">Fábrica · Acompanhamento de fases · Ordenado por prazo</div>
         </div>
         <div id="pcp-mes-label" style="font-size:11px;color:#fb923c;font-family:var(--mono)"></div>
@@ -383,10 +383,9 @@ input[type="date"]{font-family:var(--mono);}
           <option value="concluido">✓ Concluído</option>
         </select>
         <input id="pcp-f-busca" placeholder="Buscar cliente..." oninput="renderPCP()" style="min-width:160px">
-        <button class="btn-pcp-add" id="btn-pcp-add" onclick="pcpAdicionarManual()">+ Lançar ambiente</button>
       </div>
       <div id="pcp-aviso-readonly" style="display:none;margin-bottom:10px;padding:8px 14px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:var(--radius-sm);font-size:12px;color:#fb923c">
-        👁️ Modo visualização — somente Marlony pode editar o PCP.
+        👁️ Modo visualização — somente Marlony pode editar a Fábrica.
       </div>
       <div class="card" style="overflow:hidden">
         <div class="table-wrap">
@@ -523,7 +522,7 @@ input[type="date"]{font-family:var(--mono);}
             <option value="todos">Todos os projetos</option>
             <option value="consultor">Por consultor</option>
             <option value="cliente">Por cliente</option>
-            <option value="pcp">PCP — Produção (Maio/2026)</option>
+            <option value="pcp">Fábrica — Produção (Maio/2026)</option>
           </select>
         </div>
         <div id="rel-filtro-wrap" style="display:none">
@@ -595,10 +594,10 @@ async function init(){
   showLoading(true);
   try{DB=await apiList();sortDB();updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}
   try{PCP_DB=await apiPcpList();}catch(e){showToast('Erro ao carregar PCP: '+e.message);PCP_DB=[];}
+  await pcpSincronizarProjetos();
   showLoading(false);
   renderDashboard();renderProjetos();
   mostrarNotificacaoLogin();
-  pcpSincronizarProjetos();
 }
 // Preenche no PCP os projetos que já existiam no controle de projetos antes dessa aba existir
 async function pcpSincronizarProjetos(){
@@ -613,11 +612,7 @@ async function pcpSincronizarProjetos(){
       PCP_DB.push(created);ok++;
     }catch(e){/* segue tentando os demais */}
   }
-  if(ok>0){
-    renderDashboard();
-    if(document.getElementById('page-pcp').style.display!=='none')renderPCP();
-    showToast(`${ok} projeto(s) sincronizado(s) no PCP.`);
-  }
+  if(ok>0)setTimeout(()=>showToast(`${ok} projeto(s) sincronizado(s) na Fábrica.`),300);
 }
 function pedirPermissaoNotificacao(){
   if('Notification' in window && Notification.permission==='default'){Notification.requestPermission();}
@@ -733,11 +728,11 @@ document.getElementById('mp-overlay').onclick=function(e){if(e.target===this)thi
 function abrirModal(alvo){
   if(alvo==='pcp_pendente'){
     const lista=PCP_DB.filter(r=>pcpStatus(r)==='pendente');
-    document.getElementById('mp-titulo').textContent='🏭 PCP sem lançamento ('+lista.length+')';
+    document.getElementById('mp-titulo').textContent='🏭 Fábrica sem lançamento ('+lista.length+')';
     document.getElementById('mp-thead').innerHTML='<th>Cliente</th><th>Ambiente</th><th>Mês</th><th></th>';
     document.getElementById('mp-corpo').innerHTML=lista.length
       ?lista.map(r=>`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');showPage('pcp');setTimeout(()=>{document.getElementById('pcp-f-busca').value='${(r.cliente||'').replace(/'/g,"\\'")}';renderPCP();},120)"><td><b style="text-transform:capitalize">${r.cliente}</b></td><td style="text-transform:capitalize">${r.ambiente}</td><td>${r.mes||'—'}</td><td style="color:#fb923c;font-size:11px">⏳ aguarda início</td></tr>`).join('')
-      :'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text2)">Nenhuma pendência de PCP 🎉</td></tr>';
+      :'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text2)">Nenhuma pendência na Fábrica 🎉</td></tr>';
     document.getElementById('mp-overlay').classList.add('aberto');
     return;
   }
@@ -778,7 +773,7 @@ function renderDashboard(){
     <div class="stat-card" style="cursor:pointer" onclick="abrirModal('ag_aprovacao')">
       <div class="stat-label">🤝 Ag. Aprovação Cliente</div><div class="stat-value" style="color:var(--purple)">${agAp}</div></div>
     <div class="stat-card" style="cursor:pointer${pcpPend>0?';border-color:rgba(249,115,22,.4)':''}" onclick="abrirModal('pcp_pendente')">
-      <div class="stat-label">🏭 PCP sem lançamento</div><div class="stat-value" style="color:${pcpPend>0?'#f97316':'var(--text2)'}">${pcpPend}</div></div>`;
+      <div class="stat-label">🏭 Fábrica sem lançamento</div><div class="stat-value" style="color:${pcpPend>0?'#f97316':'var(--text2)'}">${pcpPend}</div></div>`;
 
   const bn=document.getElementById('dash-banner');
   if(late>0){bn.className='mp-banner atrasado';bn.style.display='block';bn.innerHTML=`⚠ <b>${late} projeto${late>1?'s':''} atrasado${late>1?'s':''}</b> — clique para ver`;bn.onclick=()=>abrirModal('atrasado');}
@@ -1110,7 +1105,6 @@ async function deletarProjeto(id){
 function renderPCP(){
   const ehMarlony=(usuarioLogado==='Marlony'||usuarioLogado==='Admin');
   document.getElementById('pcp-aviso-readonly').style.display=ehMarlony?'none':'block';
-  document.getElementById('btn-pcp-add').style.display=ehMarlony?'':'none';
 
   // Popular select de meses
   const selMes=document.getElementById('pcp-f-mes');
@@ -1207,14 +1201,7 @@ async function pcpDesfazer(id,campo,horaCampo){
   catch(e){showToast('Erro ao desfazer: '+e.message);}
   showLoading(false);
 }
-async function pcpAdicionarManual(){
-  const cli=prompt('Nome do cliente:');if(!cli)return;
-  const amb=prompt('Ambiente:');if(!amb)return;
-  showLoading(true);
-  try{const created=await apiPcpCreate({proj_id:null,cliente:cli.trim().toLowerCase(),ambiente:amb.trim().toLowerCase(),mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:null});PCP_DB.unshift(created);renderPCP();}
-  catch(e){showToast('Erro ao lançar: '+e.message);}
-  showLoading(false);
-}
+
 
 // ══ MARCAÇÃO EM LOTE ════════════════════════════════════
 let loteIds=new Set();
@@ -1359,7 +1346,7 @@ function irParaEntregues(){
   setTimeout(()=>{document.getElementById('filterStatus').value='entregue';renderProjetos();},100);
 }
 
-const pageTitles={dashboard:'Dashboard',projetos:'Projetos',novo:'Novo Projeto',pcp:'🏭 PCP — Controle de Produção'};
+const pageTitles={dashboard:'Dashboard',projetos:'Projetos',novo:'Novo Projeto',pcp:'🏭 Fábrica — Controle de Produção'};
 function showPage(name){
   if(name==='novo'&&!(usuarioLogado==='Jean'||usuarioLogado==='Admin')){showToast('Somente Jean ou Admin podem lançar novos projetos.');name='dashboard';}
   ['dashboard','projetos','novo','pcp'].forEach(p=>{
@@ -1428,24 +1415,22 @@ function previewRelatorio(){
       <thead style="background:#1e2336"><tr>
         <th style="${thStyle}">Cliente</th><th style="${thStyle}">Ambiente</th>
         <th style="${thStyle}">Mês</th><th style="${thStyle}">M²</th>
-        <th style="${thStyle}">Equipe</th><th style="${thStyle}">Início Fab.</th>
-        <th style="${thStyle}">Fim Fab.</th><th style="${thStyle}">Expedição</th><th style="${thStyle}">Status</th>
+        <th style="${thStyle}">Início Fab.</th><th style="${thStyle}">Fim Fab.</th>
+        <th style="${thStyle}">Status</th>
       </tr></thead><tbody>`;
     lista.forEach((r,i)=>{
       const st=pcpStatus(r);
-      const stTxt=st==='expedido'?'✓ Expedido':st==='producao'?'⚙ Produção':'⏳ Pendente';
+      const stTxt=st==='concluido'?'✓ Concluído':st==='producao'?'⚙ Produção':'⏳ Pendente';
       html+=`<tr ${trHover}><td style="${tdStyle};text-transform:capitalize;font-weight:500">${r.cliente}</td>
         <td style="${tdStyle};text-transform:capitalize;color:#8b90a8">${r.ambiente}</td>
-        <td style="${tdStyle}">${r.mes}</td>
+        <td style="${tdStyle}">${r.mes||'—'}</td>
         <td style="${tdStyle};color:#f97316;font-weight:500">${r.m2?r.m2+' m²':'—'}</td>
-        <td style="${tdStyle}">${r.equipe||'—'}</td>
         <td style="${tdStyle};font-family:monospace">${r.ini_fab?fmt(r.ini_fab):'—'}</td>
         <td style="${tdStyle};font-family:monospace">${r.fim_fab?fmt(r.fim_fab):'—'}</td>
-        <td style="${tdStyle};font-family:monospace">${r.expedicao?fmt(r.expedicao):'—'}</td>
         <td style="${tdStyle}">${stTxt}</td></tr>`;
     });
     html+=`<tr style="background:#1e2336;font-weight:600"><td colspan="3" style="${tdStyle}">Total: ${lista.length} ambientes</td>
-      <td style="${tdStyle};color:#f97316">${totalM2.toFixed(2)} m²</td><td colspan="5"></td></tr></tbody></table>`;
+      <td style="${tdStyle};color:#f97316">${totalM2.toFixed(2)} m²</td><td colspan="3"></td></tr></tbody></table>`;
     document.getElementById('rel-count').textContent=`${lista.length} ambientes · ${totalM2.toFixed(2)} m² total`;
   } else {
     html=`<table style="width:100%;border-collapse:collapse">
@@ -1497,8 +1482,8 @@ function exportarCSV(){
   const isPCP=tipo==='pcp';
   let csv='';
   if(isPCP){
-    csv='Cliente,Ambiente,Mês,M²,Equipe,Início Fab.,Fim Fab.,Expedição,Status\n';
-    relCache.forEach(r=>{csv+=`"${r.cliente}","${r.ambiente}","${r.mes||''}","${r.m2||''}","${r.equipe||''}","${r.ini_fab?fmt(r.ini_fab):''}","${r.fim_fab?fmt(r.fim_fab):''}","${r.expedicao?fmt(r.expedicao):''}","${pcpStatus(r)}"\n`;});
+    csv='Cliente,Ambiente,Mês,M²,Início Fab.,Fim Fab.,Status\n';
+    relCache.forEach(r=>{csv+=`"${r.cliente}","${r.ambiente}","${r.mes||''}","${r.m2||''}","${r.ini_fab?fmt(r.ini_fab):''}","${r.fim_fab?fmt(r.fim_fab):''}","${pcpStatus(r)}"\n`;});
   } else {
     csv='Cliente,Ambiente,Consultor,Fechamento,Prazo Final,Medição Real,Agenda Entrega,Montagem Entregue,Status\n';
     relCache.forEach(p=>{const st=getStatus(p);csv+=`"${p.cliente||''}","${p.ambiente||''}","${p.consultor||''}","${fmt(p.fechamento)}","${p.prazo?fmt(p.prazo):''}","${fmt(p.medicao_real)}","${fmt(p.agenda_entrega)}","${fmt(p.montagem_entregue)}","${st.label}"\n`;});
