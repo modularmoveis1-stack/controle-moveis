@@ -240,11 +240,11 @@ input[type="date"]{font-family:var(--mono);}
     <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span>
     </button>
-    <button class="nav-item" onclick="showPage('projetos')" id="nav-projetos">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Projetos</span>
-    </button>
     <button class="nav-item" onclick="showPage('novo')" id="nav-novo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Novo Projeto</span>
+    </button>
+    <button class="nav-item" onclick="showPage('projetos')" id="nav-projetos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Projetos</span>
     </button>
     <button class="nav-item pcp-nav" onclick="showPage('pcp')" id="nav-pcp">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/></svg><span>🏭 PCP</span>
@@ -598,6 +598,26 @@ async function init(){
   showLoading(false);
   renderDashboard();renderProjetos();
   mostrarNotificacaoLogin();
+  pcpSincronizarProjetos();
+}
+// Preenche no PCP os projetos que já existiam no controle de projetos antes dessa aba existir
+async function pcpSincronizarProjetos(){
+  if(usuarioLogado!=='Admin'&&usuarioLogado!=='Marlony')return;
+  const semPcp=DB.filter(p=>!PCP_DB.find(r=>r.proj_id==p.id));
+  if(!semPcp.length)return;
+  let ok=0;
+  for(const p of semPcp){
+    try{
+      const item={proj_id:p.id,cliente:(p.cliente||'').toLowerCase(),ambiente:(p.ambiente||'').toLowerCase(),mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:toISO(p.prazo)||null};
+      const created=await apiPcpCreate(item);
+      PCP_DB.push(created);ok++;
+    }catch(e){/* segue tentando os demais */}
+  }
+  if(ok>0){
+    renderDashboard();
+    if(document.getElementById('page-pcp').style.display!=='none')renderPCP();
+    showToast(`${ok} projeto(s) sincronizado(s) no PCP.`);
+  }
 }
 function pedirPermissaoNotificacao(){
   if('Notification' in window && Notification.permission==='default'){Notification.requestPermission();}
