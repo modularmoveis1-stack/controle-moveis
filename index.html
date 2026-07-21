@@ -209,11 +209,6 @@ input[type="date"]{font-family:var(--mono);}
       <div><label>ID da Planilha Google Sheets</label><input type="text" id="cfg_sheet" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></div>
       <div class="setup-msg" id="setup_msg"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-primary" onclick="saveSetup()">Salvar e conectar</button></div>
-      <div style="margin-top:8px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Modo Demo</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Teste sem configuração (dados apenas neste navegador).</div>
-        <button class="btn btn-ghost" style="font-size:12px" onclick="skipSetup()">Entrar em modo demo →</button>
-      </div>
     </div>
   </div>
 </div>
@@ -385,7 +380,7 @@ input[type="date"]{font-family:var(--mono);}
           <option value="">Todos os status</option>
           <option value="pendente">⏳ Pendente</option>
           <option value="producao">⚙️ Em produção</option>
-          <option value="expedido">✓ Expedido</option>
+          <option value="concluido">✓ Concluído</option>
         </select>
         <input id="pcp-f-busca" placeholder="Buscar cliente..." oninput="renderPCP()" style="min-width:160px">
         <button class="btn-pcp-add" id="btn-pcp-add" onclick="pcpAdicionarManual()">+ Lançar ambiente</button>
@@ -397,10 +392,9 @@ input[type="date"]{font-family:var(--mono);}
         <div class="table-wrap">
           <table class="pcp-table">
             <thead><tr>
-              <th>Cliente</th><th>Ambiente</th><th>Mês</th><th>Prazo</th>
-              <th>Corte</th><th>M²</th><th>Equipe</th>
-              <th>Início Fab.</th><th>Fim Fab.</th><th>Expedição</th>
-              <th>Status</th><th>Prog.</th><th></th>
+              <th>Cliente</th><th>Ambiente</th><th>M²</th>
+              <th>Início Fab.</th><th>Fim Fab.</th>
+              <th>Status</th><th>Prog.</th>
             </tr></thead>
             <tbody id="pcpBody"></tbody>
           </table>
@@ -446,7 +440,7 @@ input[type="date"]{font-family:var(--mono);}
   <div id="mp-modal">
     <button id="mp-fechar">✕</button>
     <h3 id="mp-titulo">Projetos</h3>
-    <table><thead><tr><th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo Final</th><th>Dias</th></tr></thead>
+    <table><thead><tr id="mp-thead"><th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo Final</th><th>Dias</th></tr></thead>
     <tbody id="mp-corpo"></tbody></table>
   </div>
 </div>
@@ -552,58 +546,11 @@ input[type="date"]{font-family:var(--mono);}
 <script>
 // ══ CONFIG ══════════════════════════════════════════════
 const CFG_KEY='moveis_cfg_v1';
-const CFG_PADRAO={url:'https://script.google.com/macros/s/AKfycbxsxPyjW7JwadAfySUwcld8hFNYOB-M-f9x6fhYjATeyrxre3YvXm8lNQkT5m0ugjnnUA/exec',sheetId:'1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg',offlineMode:false};
+const CFG_PADRAO={url:'https://script.google.com/macros/s/AKfycbyH4NnVboFSohxMvgeW2fnbTs9S_L_7aawG_rnnpUotEBqvbaBOmBixVgTX8sg_zk-JVg/exec',sheetId:'1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg'};
 let CFG={...CFG_PADRAO},DB=[],PCP_DB=[];
 function loadCfg(){try{const s=localStorage.getItem(CFG_KEY);if(s){const sv=JSON.parse(s);if(sv.url&&sv.sheetId)CFG=sv;else CFG={...CFG_PADRAO};}else CFG={...CFG_PADRAO};}catch{CFG={...CFG_PADRAO};}}
 function saveCfg(){localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}
-function hasCfg(){return CFG.offlineMode||(CFG.url&&CFG.sheetId);}
-
-// ══ PCP — DADOS SEED (Maio 2026) ════════════════════════
-const PCP_SEED=[
-  {id:'pcp-1',proj_id:null,cliente:'rachel guimaroes',ambiente:'wc rachel',mes:'Maio 2026',corte:'ok',m2:6.53,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
-  {id:'pcp-2',proj_id:null,cliente:'rachel guimaroes',ambiente:'wc jose',mes:'Maio 2026',corte:'ok',m2:7.01,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
-  {id:'pcp-3',proj_id:null,cliente:'jardel e thais',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:32.6,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-05',expedicao:'2026-05-05',prazo:''},
-  {id:'pcp-4',proj_id:null,cliente:'rachel guimaroes',ambiente:'quarto rachel',mes:'Maio 2026',corte:'ok',m2:43.18,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
-  {id:'pcp-5',proj_id:null,cliente:'liana nascimento',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:9.7,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-06',expedicao:'2026-05-06',prazo:''},
-  {id:'pcp-6',proj_id:null,cliente:'nyrla e ludgero',ambiente:'wc filha',mes:'Maio 2026',corte:'ok',m2:6.25,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-07',expedicao:'2026-05-07',prazo:''},
-  {id:'pcp-7',proj_id:null,cliente:'marcio sergio',ambiente:'cozinha+quarto',mes:'Maio 2026',corte:'ok',m2:11.3,equipe:'Guilherme',ini_fab:'2026-05-04',fim_fab:'2026-05-05',expedicao:'2026-05-05',prazo:''},
-  {id:'pcp-8',proj_id:null,cliente:'olga maria',ambiente:'wc suite 1',mes:'Maio 2026',corte:'ok',m2:3.97,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
-  {id:'pcp-9',proj_id:null,cliente:'olga maria',ambiente:'wc suite 2',mes:'Maio 2026',corte:'ok',m2:3.91,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
-  {id:'pcp-10',proj_id:null,cliente:'olga maria',ambiente:'wc suite casal',mes:'Maio 2026',corte:'ok',m2:3.99,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-11',expedicao:'',prazo:''},
-  {id:'pcp-11',proj_id:null,cliente:'rachel guimaroes',ambiente:'quarto jose',mes:'Maio 2026',corte:'ok',m2:49.43,equipe:'Guilherme',ini_fab:'2026-04-17',fim_fab:'2026-05-18',expedicao:'',prazo:''},
-  {id:'pcp-12',proj_id:null,cliente:'carlos',ambiente:'academia mega fitniss',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-21',expedicao:'',prazo:''},
-  {id:'pcp-13',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 01',mes:'Maio 2026',corte:'ok',m2:10.98,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
-  {id:'pcp-14',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 03',mes:'Maio 2026',corte:'ok',m2:5.52,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
-  {id:'pcp-15',proj_id:null,cliente:'dorelice ferro',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:1.19,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
-  {id:'pcp-16',proj_id:null,cliente:'clarissa junqueira',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:10.29,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
-  {id:'pcp-17',proj_id:null,cliente:'clarissa junqueira',ambiente:'area de servico',mes:'Maio 2026',corte:'ok',m2:1.13,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
-  {id:'pcp-18',proj_id:null,cliente:'felipe e kezia',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:47.8,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-22',expedicao:'',prazo:''},
-  {id:'pcp-19',proj_id:null,cliente:'amanda marinho',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:5.85,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-25',expedicao:'',prazo:''},
-  {id:'pcp-20',proj_id:null,cliente:'lucia rosendo',ambiente:'quarto 02',mes:'Maio 2026',corte:'ok',m2:7.14,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
-  {id:'pcp-21',proj_id:null,cliente:'mayra soares',ambiente:'sala',mes:'Maio 2026',corte:'ok',m2:5.68,equipe:'Equipe externa',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
-  {id:'pcp-22',proj_id:null,cliente:'mayra soares',ambiente:'area de servico',mes:'Maio 2026',corte:'ok',m2:2.23,equipe:'Equipe externa',ini_fab:'2026-05-11',fim_fab:'2026-05-26',expedicao:'',prazo:''},
-  {id:'pcp-23',proj_id:null,cliente:'rachel guimaroes',ambiente:'gaveteiro-jose',mes:'Maio 2026',corte:'ok',m2:3.06,equipe:'Guilherme',ini_fab:'2026-05-11',fim_fab:'2026-05-27',expedicao:'',prazo:''},
-  {id:'pcp-24',proj_id:null,cliente:'daiane kuniak',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:26.8,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-05-27',expedicao:'',prazo:''},
-  {id:'pcp-25',proj_id:null,cliente:'jardeu e thais',ambiente:'pratileira escritorio',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-20',fim_fab:'2026-05-22',expedicao:'',prazo:''},
-  {id:'pcp-26',proj_id:null,cliente:'eunice rocha',ambiente:'quarto',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-21',fim_fab:'2026-05-21',expedicao:'',prazo:''},
-  {id:'pcp-27',proj_id:null,cliente:'gercina dalva',ambiente:'cozinha',mes:'Maio 2026',corte:'ok',m2:39.94,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
-  {id:'pcp-28',proj_id:null,cliente:'gercina dalva',ambiente:'dispensa',mes:'Maio 2026',corte:'ok',m2:10.31,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
-  {id:'pcp-29',proj_id:null,cliente:'marina carvalho',ambiente:'varanda',mes:'Maio 2026',corte:'ok',m2:8.42,equipe:'',ini_fab:'2026-05-11',fim_fab:'2026-06-02',expedicao:'',prazo:''},
-  {id:'pcp-30',proj_id:null,cliente:'antonio e amparo',ambiente:'painel hall',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-31',proj_id:null,cliente:'antonio e amparo',ambiente:'wc social',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-32',proj_id:null,cliente:'thiago e morgana',ambiente:'escritorio',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-33',proj_id:null,cliente:'ioline e laura',ambiente:'sala de procedimento',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-34',proj_id:null,cliente:'ioline e laura',ambiente:'recepçao',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-35',proj_id:null,cliente:'rachel guimaroes',ambiente:'lavanderia',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-36',proj_id:null,cliente:'francisco junior',ambiente:'quarto',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-37',proj_id:null,cliente:'felipe lunari',ambiente:'porta acesso banheiro',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-38',proj_id:null,cliente:'rachel guimaroes',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-39',proj_id:null,cliente:'ioline e laura',ambiente:'sala de esterilizacao',mes:'Maio 2026',corte:'ok',m2:null,equipe:'Guilherme',ini_fab:'2026-05-28',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-40',proj_id:null,cliente:'fabiana macedo',ambiente:'sala de estar',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'2026-06-03',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-41',proj_id:null,cliente:'fabiana macedo',ambiente:'closet',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''},
-  {id:'pcp-42',proj_id:null,cliente:'fabiana macedo',ambiente:'quarto casal',mes:'Maio 2026',corte:'ok',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''},
-];
-let pcpProxId=100;
+function hasCfg(){return CFG.url&&CFG.sheetId;}
 
 // ══ DATAS ════════════════════════════════════════════════
 function toISO(str){if(!str)return null;if(/^\d{4}-\d{2}-\d{2}/.test(str))return str.split('T')[0];try{const d=new Date(str);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];}catch(e){}return null;}
@@ -615,38 +562,39 @@ function addWorkdays(dateStr,days){if(!dateStr)return null;const iso=toISO(dateS
 function networkDays(a,b){if(!a||!b)return null;const ia=toISO(a),ib=toISO(b);if(!ia||!ib)return null;let d1=new Date(ia+'T12:00:00'),d2=new Date(ib+'T12:00:00');if(d1>d2)[d1,d2]=[d2,d1];let count=0,cur=new Date(d1);while(cur<=d2){const dow=cur.getDay();if(dow!==0&&dow!==6)count++;cur.setDate(cur.getDate()+1);}return count-1;}
 
 // ══ API ══════════════════════════════════════════════════
-function localLoad(){try{const r=localStorage.getItem('moveis_projetos_v1');if(!r)return[];return JSON.parse(r)||[];}catch{return[];}}
-function localSave(data){localStorage.setItem('moveis_projetos_v1',JSON.stringify(data));}
 async function gasCall(action,payload={}){const params=new URLSearchParams({action,...Object.fromEntries(Object.entries(payload).map(([k,v])=>[k,v===null||v===undefined?'':String(v)]))});const r=await fetch(CFG.url+'?'+params.toString());if(!r.ok)throw new Error('Falha na conexão');const json=await r.json();if(json.error)throw new Error(json.error);return json;}
-async function apiList(){if(CFG.offlineMode)return localLoad();const res=await gasCall('list',{sheetId:CFG.sheetId});return res.data||[];}
-async function apiCreate(project){if(CFG.offlineMode){const data=localLoad();const maxId=data.reduce((m,p)=>Math.max(m,p.id||0),0);const newP={...project,id:maxId+1};data.unshift(newP);localSave(data);return newP;}const res=await gasCall('create',{sheetId:CFG.sheetId,data:JSON.stringify(project)});return res.project;}
-async function apiUpdate(id,patch){if(CFG.offlineMode){const data=localLoad();const idx=data.findIndex(p=>p.id===id);if(idx===-1)throw new Error('Não encontrado');data[idx]={...data[idx],...patch};localSave(data);return data[idx];}const res=await gasCall('update',{sheetId:CFG.sheetId,id,data:JSON.stringify(patch)});return res.project;}
-async function apiDelete(id){if(CFG.offlineMode){localSave(localLoad().filter(p=>p.id!==id));return;}await gasCall('delete',{sheetId:CFG.sheetId,id});}
+async function apiList(){const res=await gasCall('list',{sheetId:CFG.sheetId});return res.data||[];}
+async function apiCreate(project){const res=await gasCall('create',{sheetId:CFG.sheetId,data:JSON.stringify(project)});return res.project;}
+async function apiUpdate(id,patch){const res=await gasCall('update',{sheetId:CFG.sheetId,id,data:JSON.stringify(patch)});return res.project;}
+async function apiDelete(id){await gasCall('delete',{sheetId:CFG.sheetId,id});}
 
-// ══ PCP LOCAL ════════════════════════════════════════════
-function pcpLoad(){try{const s=localStorage.getItem('mm_pcp_v2');return s?JSON.parse(s):[...PCP_SEED];}catch{return[...PCP_SEED];}}
-function pcpSave(){localStorage.setItem('mm_pcp_v2',JSON.stringify(PCP_DB));}
-function pcpStatus(r){if(r.expedicao)return'expedido';if(r.ini_fab)return'producao';return'pendente';}
-function pcpProg(r){let p=0;if(r.corte==='ok')p+=25;if(r.ini_fab)p+=25;if(r.fim_fab)p+=25;if(r.expedicao)p+=25;return p;}
+// ══ PCP API (mesmo backend do controle de projetos, aba própria "PCP") ══
+async function apiPcpList(){const res=await gasCall('pcpList',{sheetId:CFG.sheetId});return res.data||[];}
+async function apiPcpCreate(item){const res=await gasCall('pcpCreate',{sheetId:CFG.sheetId,data:JSON.stringify(item)});return res.project;}
+async function apiPcpUpdate(id,patch){const res=await gasCall('pcpUpdate',{sheetId:CFG.sheetId,id,data:JSON.stringify(patch)});return res.project;}
+async function apiPcpDelete(id){await gasCall('pcpDelete',{sheetId:CFG.sheetId,id});}
+function pcpStatus(r){if(r.fim_fab)return'concluido';if(r.ini_fab)return'producao';return'pendente';}
+function pcpProg(r){if(r.fim_fab)return 100;if(r.ini_fab)return 50;return 0;}
+function pcpStatus(r){if(r.fim_fab)return'concluido';if(r.ini_fab)return'producao';return'pendente';}
+function pcpProg(r){if(r.fim_fab)return 100;if(r.ini_fab)return 50;return 0;}
 
 // ══ SETUP ════════════════════════════════════════════════
 function openSetup(){document.getElementById('setupScreen').classList.remove('hidden');}
 function closeSetup(){document.getElementById('setupScreen').classList.add('hidden');}
-function skipSetup(){CFG.offlineMode=true;saveCfg();closeSetup();init();}
-async function saveSetup(){const url=document.getElementById('cfg_url').value.trim(),sheetId=document.getElementById('cfg_sheet').value.trim(),msg=document.getElementById('setup_msg');if(!url||!sheetId){msg.textContent='Preencha os dois campos.';msg.className='setup-msg error';return;}msg.textContent='Testando...';msg.className='setup-msg';try{CFG={url,sheetId,offlineMode:false};await apiList();saveCfg();msg.textContent='✓ Conexão bem-sucedida!';msg.className='setup-msg success';setTimeout(()=>{closeSetup();init();},800);}catch(e){msg.textContent='Erro: '+e.message;msg.className='setup-msg error';}}
+async function saveSetup(){const url=document.getElementById('cfg_url').value.trim(),sheetId=document.getElementById('cfg_sheet').value.trim(),msg=document.getElementById('setup_msg');if(!url||!sheetId){msg.textContent='Preencha os dois campos.';msg.className='setup-msg error';return;}msg.textContent='Testando...';msg.className='setup-msg';try{CFG={url,sheetId};await apiList();saveCfg();msg.textContent='✓ Conexão bem-sucedida!';msg.className='setup-msg success';setTimeout(()=>{closeSetup();init();},800);}catch(e){msg.textContent='Erro: '+e.message;msg.className='setup-msg error';}}
 
 // ══ CONFIG MODAL ═════════════════════════════════════════
-function openConfigModal(){document.getElementById('cfg_url2').value=CFG.url||'';document.getElementById('cfg_sheet2').value=CFG.sheetId||'';document.getElementById('cfg_msg').textContent='';document.getElementById('cfgStatus').innerHTML=CFG.offlineMode?'<span style="color:var(--yellow)">⚠ Modo offline</span>':(CFG.url?'<span style="color:var(--green)">✓ Conectado</span>':'<span style="color:var(--red)">✗ Não configurado</span>');document.getElementById('configModal').classList.add('open');}
+function openConfigModal(){document.getElementById('cfg_url2').value=CFG.url||'';document.getElementById('cfg_sheet2').value=CFG.sheetId||'';document.getElementById('cfg_msg').textContent='';document.getElementById('cfgStatus').innerHTML=CFG.url?'<span style="color:var(--green)">✓ Conectado</span>':'<span style="color:var(--red)">✗ Não configurado</span>';document.getElementById('configModal').classList.add('open');}
 function closeConfigModal(){document.getElementById('configModal').classList.remove('open');}
-async function saveConfigModal(){const url=document.getElementById('cfg_url2').value.trim(),sheetId=document.getElementById('cfg_sheet2').value.trim(),msg=document.getElementById('cfg_msg');if(!url||!sheetId){msg.textContent='Preencha os dois campos.';msg.className='setup-msg error';return;}msg.textContent='Testando...';try{CFG={url,sheetId,offlineMode:false};await apiList();saveCfg();closeConfigModal();showToast('Configuração salva!');setTimeout(()=>init(),600);}catch(e){msg.textContent='Erro: '+e.message;msg.className='setup-msg error';}}
-function resetConfig(){if(!confirm('Redefinir?'))return;CFG={url:'',sheetId:'',offlineMode:false};saveCfg();closeConfigModal();openSetup();}
+async function saveConfigModal(){const url=document.getElementById('cfg_url2').value.trim(),sheetId=document.getElementById('cfg_sheet2').value.trim(),msg=document.getElementById('cfg_msg');if(!url||!sheetId){msg.textContent='Preencha os dois campos.';msg.className='setup-msg error';return;}msg.textContent='Testando...';try{CFG={url,sheetId};await apiList();saveCfg();closeConfigModal();showToast('Configuração salva!');setTimeout(()=>init(),600);}catch(e){msg.textContent='Erro: '+e.message;msg.className='setup-msg error';}}
+function resetConfig(){if(!confirm('Redefinir?'))return;CFG={url:'',sheetId:''};saveCfg();closeConfigModal();openSetup();}
 
 // ══ INIT ═════════════════════════════════════════════════
 function showLoading(v){document.getElementById('loadingOverlay').classList.toggle('show',v);}
 async function init(){
-  PCP_DB=pcpLoad();
   showLoading(true);
   try{DB=await apiList();sortDB();updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}
+  try{PCP_DB=await apiPcpList();}catch(e){showToast('Erro ao carregar PCP: '+e.message);PCP_DB=[];}
   showLoading(false);
   renderDashboard();renderProjetos();
   mostrarNotificacaoLogin();
@@ -713,7 +661,7 @@ function mostrarNotificacaoLogin(){
   document.body.appendChild(div);
 }
 async function reloadData(){showLoading(true);try{DB=await apiList();sortDB();updateSyncStatus();renderDashboard();renderProjetos();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
-function updateSyncStatus(){const el=document.getElementById('syncStatus');const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});el.textContent=CFG.offlineMode?'⚠ modo offline':`✓ sync ${now}`;}
+function updateSyncStatus(){const el=document.getElementById('syncStatus');const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});el.textContent=`✓ sync ${now}`;}
 
 // Ordenação por prazo (não por id)
 function sortDB(){
@@ -763,9 +711,20 @@ function progresso(p){const steps=['medicao_real','aprovacao_cliente','conferido
 document.getElementById('mp-fechar').onclick=function(){document.getElementById('mp-overlay').classList.remove('aberto');};
 document.getElementById('mp-overlay').onclick=function(e){if(e.target===this)this.classList.remove('aberto');};
 function abrirModal(alvo){
+  if(alvo==='pcp_pendente'){
+    const lista=PCP_DB.filter(r=>pcpStatus(r)==='pendente');
+    document.getElementById('mp-titulo').textContent='🏭 PCP sem lançamento ('+lista.length+')';
+    document.getElementById('mp-thead').innerHTML='<th>Cliente</th><th>Ambiente</th><th>Mês</th><th></th>';
+    document.getElementById('mp-corpo').innerHTML=lista.length
+      ?lista.map(r=>`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');showPage('pcp');setTimeout(()=>{document.getElementById('pcp-f-busca').value='${(r.cliente||'').replace(/'/g,"\\'")}';renderPCP();},120)"><td><b style="text-transform:capitalize">${r.cliente}</b></td><td style="text-transform:capitalize">${r.ambiente}</td><td>${r.mes||'—'}</td><td style="color:#fb923c;font-size:11px">⏳ aguarda início</td></tr>`).join('')
+      :'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text2)">Nenhuma pendência de PCP 🎉</td></tr>';
+    document.getElementById('mp-overlay').classList.add('aberto');
+    return;
+  }
   const labels={atrasado:'🔴 Atrasados',atencao:'🟡 Em Atenção',prazo:'🟢 No Prazo',ag_medicao:'📐 Aguardando Medição',ag_aprovacao:'🤝 Aguardando Aprovação Cliente',entregue_ok:'✅ Entregues no prazo',entregue_atr:'⚠️ Entregues fora do prazo'};
   const lista=alvo==='ag_aprovacao'?DB.filter(p=>!isEntregue(p)&&isAgAprovacao(p)):DB.filter(p=>getStatus(p).key===alvo);
   document.getElementById('mp-titulo').textContent=(labels[alvo]||'Projetos')+' ('+lista.length+')';
+  document.getElementById('mp-thead').innerHTML='<th>Cliente</th><th>Ambiente</th><th>Consultor</th><th>Prazo Final</th><th>Dias</th>';
   document.getElementById('mp-corpo').innerHTML=lista.length
     ?lista.map(p=>{const diff=diffDays(p.prazo);const diasTxt=diff===null?'—':diff<0?`${diff}d atrasado`:diff===0?'hoje':`+${diff}d`;const cor=alvo==='atrasado'?'color:#fca5a5':alvo==='atencao'?'color:#fcd34d':alvo==='ag_medicao'?'color:var(--teal)':alvo==='ag_aprovacao'?'color:var(--purple)':'color:#86efac';return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td>${p.consultor}</td><td style="font-family:monospace">${p.prazo?fmt(p.prazo):'—'}</td><td style="font-family:monospace;font-weight:600;${cor}">${diasTxt}</td></tr>`;}).join('')
     :'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text2)">Nenhum projeto.</td></tr>';
@@ -783,6 +742,7 @@ function renderDashboard(){
   const agAp=abertos.filter(isAgAprovacao).length;
   const eok=entregues.filter(p=>getStatus(p).key==='entregue_ok').length;
   const eatr=entregues.filter(p=>getStatus(p).key==='entregue_atr').length;
+  const pcpPend=PCP_DB.filter(r=>pcpStatus(r)==='pendente').length;
 
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='';renderProjetos();},100)">
@@ -796,7 +756,9 @@ function renderDashboard(){
     <div class="stat-card clickable-teal" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='ag_medicao';renderProjetos();abrirModal('ag_medicao');},120)">
       <div class="stat-label">📐 Ag. Medição</div><div class="stat-value teal">${agm}</div></div>
     <div class="stat-card" style="cursor:pointer" onclick="abrirModal('ag_aprovacao')">
-      <div class="stat-label">🤝 Ag. Aprovação Cliente</div><div class="stat-value" style="color:var(--purple)">${agAp}</div></div>`;
+      <div class="stat-label">🤝 Ag. Aprovação Cliente</div><div class="stat-value" style="color:var(--purple)">${agAp}</div></div>
+    <div class="stat-card" style="cursor:pointer${pcpPend>0?';border-color:rgba(249,115,22,.4)':''}" onclick="abrirModal('pcp_pendente')">
+      <div class="stat-label">🏭 PCP sem lançamento</div><div class="stat-value" style="color:${pcpPend>0?'#f97316':'var(--text2)'}">${pcpPend}</div></div>`;
 
   const bn=document.getElementById('dash-banner');
   if(late>0){bn.className='mp-banner atrasado';bn.style.display='block';bn.innerHTML=`⚠ <b>${late} projeto${late>1?'s':''} atrasado${late>1?'s':''}</b> — clique para ver`;bn.onclick=()=>abrirModal('atrasado');}
@@ -1106,21 +1068,13 @@ async function updateField(id,key,val){
   showLoading(false);
 }
 
-// Auto-lançar no PCP quando projeto cadastrado ou entregue
-function pcpAutoLancar(proj){
+// Auto-lançar no PCP quando o projeto é cadastrado (Jean) — entra como pendente aguardando início
+async function pcpAutoLancar(proj){
   if(PCP_DB.find(r=>r.proj_id==proj.id))return;
-  const mes=mesAtualLabel();
-  PCP_DB.push({
-    id:'pcp-'+(++pcpProxId),proj_id:proj.id,
-    cliente:(proj.cliente||'').toLowerCase(),
-    ambiente:(proj.ambiente||'').toLowerCase(),
-    mes,corte:'',m2:null,equipe:proj.equipe||'',
-    ini_fab:toISO(proj.corte_inicio)||'',
-    fim_fab:toISO(proj.fitamento)||'',
-    expedicao:isEntregue(proj)?toISO(proj.montagem_entregue)||'':'',
-    prazo:toISO(proj.prazo)||''
-  });
-  pcpSave();
+  const item={proj_id:proj.id,cliente:(proj.cliente||'').toLowerCase(),ambiente:(proj.ambiente||'').toLowerCase(),
+    mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:toISO(proj.prazo)||null};
+  try{const created=await apiPcpCreate(item);PCP_DB.unshift(created);renderDashboard();if(document.getElementById('page-pcp').style.display!=='none')renderPCP();}
+  catch(e){showToast('Erro ao lançar no PCP: '+e.message);}
 }
 function mesAtualLabel(){const ms=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const d=new Date();return ms[d.getMonth()]+' '+d.getFullYear();}
 
@@ -1162,69 +1116,84 @@ function renderPCP(){
   });
 
   const totalM2=lista.reduce((s,r)=>s+(r.m2||0),0);
-  const exp=lista.filter(r=>r.expedicao).length;
-  const prod=lista.filter(r=>r.ini_fab&&!r.expedicao).length;
-  const pend=lista.filter(r=>!r.ini_fab).length;
+  const conc=lista.filter(r=>pcpStatus(r)==='concluido').length;
+  const prod=lista.filter(r=>pcpStatus(r)==='producao').length;
+  const pend=lista.filter(r=>pcpStatus(r)==='pendente').length;
 
   document.getElementById('pcpStats').innerHTML=`
     <div class="pcp-stat"><div class="lbl">Ambientes</div><div class="val">${lista.length}</div></div>
     <div class="pcp-stat"><div class="lbl">Total m²</div><div class="val">${totalM2.toFixed(1)}</div></div>
-    <div class="pcp-stat"><div class="lbl" style="color:var(--green)">Expedidos</div><div class="val" style="color:var(--green)">${exp}</div></div>
+    <div class="pcp-stat"><div class="lbl" style="color:var(--green)">Concluídos</div><div class="val" style="color:var(--green)">${conc}</div></div>
     <div class="pcp-stat"><div class="lbl" style="color:var(--yellow)">Em produção</div><div class="val" style="color:var(--yellow)">${prod}</div></div>
     <div class="pcp-stat"><div class="lbl" style="color:var(--text3)">Pendentes</div><div class="val" style="color:var(--text3)">${pend}</div></div>`;
 
-  const EQUIPES=['Cid premontando','Tadeu e Noronha','Arlen e Guilherme','Lucas e Yure','Marcílio e Antônio','Yure e Atevaldo','Guilherme','Equipe externa'];
-  const ro=!ehMarlony;
+  const ro=!ehMarlony,isAdmin=usuarioLogado==='Admin';
+
+  const dataLancHTML=(r,campo,horaCampo,label)=>{
+    const val=r[campo];
+    if(val){
+      const hora=r[horaCampo]?` <span style="opacity:.7" title="Lançado às ${r[horaCampo]}">(${r[horaCampo]})</span>`:'';
+      if(isAdmin)return`<span style="cursor:pointer" title="Admin: clique para desfazer" onclick="if(confirm('Desfazer ${label} de ${r.cliente}? Essa ação é restrita ao Admin.'))pcpDesfazer('${r.id}','${campo}','${horaCampo}')"><span style="color:var(--green);font-weight:600;font-family:var(--mono);font-size:12px">🔒 ${fmt(val)}${hora}</span></span>`;
+      return`<span style="color:var(--green);font-weight:600;font-family:var(--mono);font-size:12px">🔒 ${fmt(val)}${hora}</span>`;
+    }
+    if(ehMarlony)return`<input type="date" max="${today()}" onchange="if(this.value)pcpLancarData('${r.id}','${campo}','${horaCampo}',this.value)" style="width:135px;font-size:12px;padding:4px 8px">`;
+    return`<span style="font-size:12px;color:var(--text3)">○ pendente</span>`;
+  };
 
   document.getElementById('pcpBody').innerHTML=lista.map(r=>{
     const st=pcpStatus(r);
     const prog=pcpProg(r);
-    const stBadge=st==='expedido'?`<span class="badge badge-green">✓ Expedido</span>`:st==='producao'?`<span class="badge badge-yellow">⚙ Produção</span>`:`<span class="badge badge-blue">⏳ Pendente</span>`;
-    const eqOpts=EQUIPES.map(e=>`<option ${r.equipe===e?'selected':''}>${e}</option>`).join('');
+    const stBadge=st==='concluido'?`<span class="badge badge-green">✓ Concluído</span>`:st==='producao'?`<span class="badge badge-yellow">⚙ Produção</span>`:`<span class="badge badge-blue">⏳ Pendente</span>`;
     return`<tr id="pcpr-${r.id}">
       <td class="td-name" style="text-transform:capitalize">${r.cliente}</td>
       <td class="td-muted" style="text-transform:capitalize">${r.ambiente}</td>
-      <td class="td-date">${r.mes}</td>
-      <td class="td-date">${r.prazo?fmt(r.prazo):'—'}</td>
-      <td><select onchange="pcpSet('${r.id}','corte',this.value)" ${ro?'disabled':''} style="width:70px;font-size:12px;padding:3px 6px">
-        <option ${r.corte==='ok'?'selected':''} value="ok">ok</option>
-        <option ${r.corte==='pend'?'selected':''} value="pend">pend</option>
-        <option ${r.corte==='nok'?'selected':''} value="nok">não ok</option>
-      </select></td>
       <td><input type="number" step="0.01" value="${r.m2||''}" placeholder="m²" ${ro?'disabled':''} onchange="pcpSet('${r.id}','m2',parseFloat(this.value)||null)" style="width:70px;font-size:12px;padding:3px 6px"></td>
-      <td><select onchange="pcpSet('${r.id}','equipe',this.value)" ${ro?'disabled':''} style="width:130px;font-size:12px;padding:3px 6px"><option value=""></option>${eqOpts}</select></td>
-      <td><input type="date" value="${r.ini_fab||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','ini_fab',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
-      <td><input type="date" value="${r.fim_fab||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','fim_fab',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
-      <td><input type="date" value="${r.expedicao||''}" ${ro?'disabled':''} onchange="pcpSet('${r.id}','expedicao',this.value)" style="width:126px;font-size:12px;padding:3px 6px"></td>
+      <td>${dataLancHTML(r,'ini_fab','ini_fab_hora','início de fabricação')}</td>
+      <td>${dataLancHTML(r,'fim_fab','fim_fab_hora','fim de fabricação')}</td>
       <td>${stBadge}</td>
       <td style="min-width:60px"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${prog}%</div><div class="pcp-prog"><div class="pcp-prog-fill" style="width:${prog}%;background:${prog===100?'var(--green)':'#f97316'}"></div></div></td>
-      <td>${ro?'':`<button onclick="pcpRemover('${r.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px" title="Remover">✕</button>`}</td>
     </tr>`;
   }).join('');
 
   document.getElementById('pcpTotals').innerHTML=`
     <span>Total filtrado: <strong>${lista.length} ambientes</strong></span>
     <span>M² total: <strong>${totalM2.toFixed(2)} m²</strong></span>
-    <span>Expedidos: <strong>${exp}</strong></span>
+    <span>Concluídos: <strong>${conc}</strong></span>
     <span>Em produção: <strong>${prod}</strong></span>
     <span>Pendentes: <strong>${pend}</strong></span>`;
 }
 
-function pcpSet(id,campo,valor){
-  const r=PCP_DB.find(x=>x.id===id);if(!r)return;
-  r[campo]=valor;pcpSave();
-  // Atualizar apenas linha sem re-render total
-  renderPCP();
+async function pcpSet(id,campo,valor){
+  const r=PCP_DB.find(x=>x.id==id);if(!r)return;
+  showLoading(true);
+  try{const updated=await apiPcpUpdate(id,{[campo]:valor});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();}
+  catch(e){showToast('Erro ao salvar: '+e.message);}
+  showLoading(false);
 }
-function pcpRemover(id){
-  if(!confirm('Remover este ambiente do PCP?'))return;
-  PCP_DB=PCP_DB.filter(r=>r.id!==id);pcpSave();renderPCP();
+async function pcpLancarData(id,campo,horaCampo,dataDigitada){
+  if(usuarioLogado!=='Marlony'&&usuarioLogado!=='Admin')return;
+  const r=PCP_DB.find(x=>x.id==id);if(!r||r[campo])return;
+  const dataFinal=dataDigitada||today();
+  showLoading(true);
+  try{const updated=await apiPcpUpdate(id,{[campo]:dataFinal,[horaCampo]:nowTime()});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();renderDashboard();}
+  catch(e){showToast('Erro ao lançar: '+e.message);}
+  showLoading(false);
 }
-function pcpAdicionarManual(){
+async function pcpDesfazer(id,campo,horaCampo){
+  if(usuarioLogado!=='Admin')return;
+  const r=PCP_DB.find(x=>x.id==id);if(!r)return;
+  showLoading(true);
+  try{const updated=await apiPcpUpdate(id,{[campo]:null,[horaCampo]:null});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();renderDashboard();}
+  catch(e){showToast('Erro ao desfazer: '+e.message);}
+  showLoading(false);
+}
+async function pcpAdicionarManual(){
   const cli=prompt('Nome do cliente:');if(!cli)return;
   const amb=prompt('Ambiente:');if(!amb)return;
-  PCP_DB.push({id:'pcp-'+(++pcpProxId),proj_id:null,cliente:cli.trim().toLowerCase(),ambiente:amb.trim().toLowerCase(),mes:mesAtualLabel(),corte:'',m2:null,equipe:'',ini_fab:'',fim_fab:'',expedicao:'',prazo:''});
-  pcpSave();renderPCP();
+  showLoading(true);
+  try{const created=await apiPcpCreate({proj_id:null,cliente:cli.trim().toLowerCase(),ambiente:amb.trim().toLowerCase(),mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:null});PCP_DB.unshift(created);renderPCP();}
+  catch(e){showToast('Erro ao lançar: '+e.message);}
+  showLoading(false);
 }
 
 // ══ MARCAÇÃO EM LOTE ════════════════════════════════════
@@ -1539,6 +1508,7 @@ async function salvarProjeto(){
   try{
     const created=await apiCreate(p);
     DB.unshift(created);sortDB();
+    pcpAutoLancar(created);
     document.querySelectorAll('#page-novo input').forEach(el=>el.value='');
     document.getElementById('n_prazo_dias').value='55';
     showToast('Projeto salvo! Agora marque "Fechado em" no painel do projeto.');showPage('projetos');
@@ -1558,7 +1528,7 @@ function fazerLogin(){
 function fazerLogout(){usuarioLogado=null;sessionStorage.removeItem('usuario');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('userBadge').style.display='none';document.getElementById('login_senha').value='';document.getElementById('login_msg').textContent='';DB=[];renderDashboard();renderProjetos();}
 
 const sessaoUsuario=sessionStorage.getItem('usuario');
-if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;atualizarVisibilidadeNovo();pedirPermissaoNotificacao();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();PCP_DB=pcpLoad();init();}}else{showLoading(false);}
+if(sessaoUsuario&&USUARIOS[sessaoUsuario]){usuarioLogado=sessaoUsuario;atualizarVisibilidadeNovo();pedirPermissaoNotificacao();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('userBadge').style.display='flex';document.getElementById('userLabel').textContent=sessaoUsuario;document.getElementById('userAvatar').textContent=sessaoUsuario.charAt(0).toUpperCase();loadCfg();if(!hasCfg()){openSetup();showLoading(false);}else{closeSetup();init();}}else{showLoading(false);}
 renderDashboard();
 </script>
 </body>
