@@ -545,9 +545,10 @@ input[type="date"]{font-family:var(--mono);}
 <script>
 // ══ CONFIG ══════════════════════════════════════════════
 const CFG_KEY='moveis_cfg_v1';
+const CFG_VERSION=2; // aumente este numero sempre que trocar a URL do CFG_PADRAO abaixo
 const CFG_PADRAO={url:'https://script.google.com/macros/s/AKfycbyH4NnVboFSohxMvgeW2fnbTs9S_L_7aawG_rnnpUotEBqvbaBOmBixVgTX8sg_zk-JVg/exec',sheetId:'1TIEjkrS8SEg4ghlwdb_lsWdoKjCPDCsN-VEhlXu9Ofg'};
 let CFG={...CFG_PADRAO},DB=[],PCP_DB=[];
-function loadCfg(){try{const s=localStorage.getItem(CFG_KEY);if(s){const sv=JSON.parse(s);if(sv.url&&sv.sheetId)CFG=sv;else CFG={...CFG_PADRAO};}else CFG={...CFG_PADRAO};}catch{CFG={...CFG_PADRAO};}}
+function loadCfg(){try{const s=localStorage.getItem(CFG_KEY);if(s){const sv=JSON.parse(s);if(sv.url&&sv.sheetId&&sv.version===CFG_VERSION){CFG=sv;return;}}CFG={...CFG_PADRAO,version:CFG_VERSION};saveCfg();}catch{CFG={...CFG_PADRAO,version:CFG_VERSION};}}
 function saveCfg(){localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}
 function hasCfg(){return CFG.url&&CFG.sheetId;}
 
