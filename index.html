@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -591,29 +592,92 @@ function resetConfig(){if(!confirm('Redefinir?'))return;CFG={url:'',sheetId:''};
 
 // ══ INIT ═════════════════════════════════════════════════
 function showLoading(v){document.getElementById('loadingOverlay').classList.toggle('show',v);}
+// ══ VELOCIDADE: cache local + salvamento em segundo plano ══
+// A tela abre na hora com a última cópia salva no aparelho e atualiza sozinha quando a planilha responde.
+// Cada marcação aparece na hora; o envio para a planilha acontece em segundo plano, em fila (na ordem certa).
+const CACHE_KEY='cache_dados_v1';
+function cacheSalvar(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({DB,PCP_DB,ts:Date.now()}));}catch(e){}}
+function cacheLer(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(e){return null;}}
+let _fila=Promise.resolve(),_pendentes=0;
+function setSalvando(){const el=document.getElementById('syncStatus');if(!el)return;if(_pendentes>0)el.textContent=`⏳ salvando (${_pendentes})…`;else updateSyncStatus();}
+function salvarEmSegundoPlano(fn){
+  _pendentes++;setSalvando();
+  _fila=_fila.then(fn).catch(e=>{showToast('⚠️ Falha ao salvar na planilha: '+e.message+' — recarregando');setTimeout(reloadData,1500);}).finally(()=>{_pendentes--;setSalvando();});
+  return _fila;
+}
+window.addEventListener('beforeunload',e=>{if(_pendentes>0){e.preventDefault();e.returnValue='Ainda salvando alterações...';}});
+function pcpVisivel(){const el=document.getElementById('page-pcp');return el&&el.style.display!=='none';}
+function aplicarLocal(id,patch){
+  const p=DB.find(x=>x.id==id);if(p)Object.assign(p,patch);
+  sortDB();openDetail(id);renderDashboard();renderProjetos();cacheSalvar();
+}
+function aplicarLocalPcp(id,patch){
+  const r=PCP_DB.find(x=>x.id==id);if(r)Object.assign(r,patch);
+  if(pcpVisivel())renderPCP();renderDashboard();cacheSalvar();
+}
 async function init(){
-  showLoading(true);
-  try{DB=await apiList();sortDB();updateSyncStatus();}catch(e){showToast('Erro ao carregar: '+e.message);}
-  try{PCP_DB=await apiPcpList();}catch(e){showToast('Erro ao carregar PCP: '+e.message);PCP_DB=[];}
-  await pcpSincronizarProjetos();
+  const c=cacheLer();
+  if(c&&Array.isArray(c.DB)&&c.DB.length){
+    DB=c.DB;PCP_DB=(c.PCP_DB||[]).filter(Boolean);sortDB();renderDashboard();renderProjetos();
+    document.getElementById('syncStatus').textContent='⏳ atualizando…';
+  }else showLoading(true);
+  const [rDB,rPCP]=await Promise.allSettled([apiList(),apiPcpList()]);
+  if(rDB.status==='fulfilled'){if(_pendentes===0)DB=rDB.value;sortDB();updateSyncStatus();}
+  else showToast('Erro ao carregar: '+rDB.reason.message);
+  if(rPCP.status==='fulfilled'){if(_pendentes===0)PCP_DB=(rPCP.value||[]).filter(Boolean);}
+  else{showToast('Erro ao carregar PCP: '+rPCP.reason.message);if(!c)PCP_DB=[];}
+  cacheSalvar();
   showLoading(false);
-  renderDashboard();renderProjetos();
+  renderDashboard();renderProjetos();if(pcpVisivel())renderPCP();
   mostrarNotificacaoLogin();
+  pcpSincronizarProjetos(); // roda em segundo plano, sem travar a tela
+}
+// Encontra a linha da Fábrica de um projeto: pelo código do projeto ou, se ele faltar, por cliente + ambiente
+function normTxt(t){return(t||'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
+function pcpDoProjeto(p){
+  const c=normTxt(p.cliente),a=normTxt(p.ambiente);
+  return PCP_DB.find(r=>r&&((r.proj_id&&String(r.proj_id)===String(p.id))||(normTxt(r.cliente)===c&&normTxt(r.ambiente)===a)));
+}
+// Remove linhas repetidas da Fábrica (mesmo cliente + ambiente) que estão sem nenhum lançamento
+function pcpTemDados(r){return!!(r.ini_fab||r.fim_fab||r.m2);}
+function pcpDuplicados(){
+  const grupos={};
+  PCP_DB.filter(Boolean).forEach(r=>{const k=normTxt(r.cliente)+'|'+normTxt(r.ambiente);(grupos[k]=grupos[k]||[]).push(r);});
+  const apagar=[];
+  Object.values(grupos).forEach(g=>{
+    if(g.length<2)return;
+    const ordem=[...g].sort((x,y)=>(!!y.fim_fab-!!x.fim_fab)||(!!y.ini_fab-!!x.ini_fab)||(!!y.m2-!!x.m2)||(String(x.id).localeCompare(String(y.id),undefined,{numeric:true})));
+    ordem.slice(1).forEach(r=>{if(!pcpTemDados(r))apagar.push(r);});
+  });
+  return apagar;
+}
+async function pcpLimparDuplicados(){
+  if(usuarioLogado!=='Admin')return;
+  const apagar=pcpDuplicados();
+  if(!apagar.length){showToast('Nenhuma linha repetida na Fábrica 🎉');return;}
+  if(!confirm(`Encontrei ${apagar.length} linha(s) repetida(s) na Fábrica, todas sem lançamento de produção.\nA linha original de cada projeto fica mantida.\n\nApagar as repetidas?`))return;
+  const ids=new Set(apagar.map(r=>r.id));
+  PCP_DB=PCP_DB.filter(r=>r&&!ids.has(r.id));cacheSalvar();renderDashboard();if(pcpVisivel())renderPCP();
+  document.getElementById('mp-overlay').classList.remove('aberto');
+  apagar.forEach(r=>salvarEmSegundoPlano(()=>apiPcpDelete(r.id)));
+  showToast(`🧹 Apagando ${apagar.length} linha(s) repetida(s) — acompanhe o "salvando" no topo.`);
 }
 // Preenche no PCP os projetos que já existiam no controle de projetos antes dessa aba existir
 async function pcpSincronizarProjetos(){
   if(usuarioLogado!=='Admin'&&usuarioLogado!=='Marlony')return;
-  const semPcp=DB.filter(p=>!PCP_DB.find(r=>r.proj_id==p.id));
+  if(sessionStorage.getItem('pcpSincronizado'))return;
+  sessionStorage.setItem('pcpSincronizado','1');
+  const semPcp=DB.filter(p=>!pcpDoProjeto(p));
   if(!semPcp.length)return;
   let ok=0;
   for(const p of semPcp){
     try{
       const item={proj_id:p.id,cliente:(p.cliente||'').toLowerCase(),ambiente:(p.ambiente||'').toLowerCase(),mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:toISO(p.prazo)||null};
       const created=await apiPcpCreate(item);
-      PCP_DB.push(created);ok++;
+      if(created){PCP_DB.push(created);ok++;}
     }catch(e){/* segue tentando os demais */}
   }
-  if(ok>0)setTimeout(()=>showToast(`${ok} projeto(s) sincronizado(s) na Fábrica.`),300);
+  if(ok>0){cacheSalvar();renderDashboard();if(pcpVisivel())renderPCP();setTimeout(()=>showToast(`${ok} projeto(s) sincronizado(s) na Fábrica.`),300);}
 }
 function pedirPermissaoNotificacao(){
   if('Notification' in window && Notification.permission==='default'){Notification.requestPermission();}
@@ -631,10 +695,11 @@ function iniciarChecagemPeriodica(){
   _checagemInterval=setInterval(verificarNovidades,5*60*1000);
 }
 async function verificarNovidades(){
-  if(!usuarioLogado)return;
+  if(!usuarioLogado||_pendentes>0)return;
   let nova;
   try{nova=await apiList();}catch(e){return;}
-  DB=nova;sortDB();
+  if(_pendentes>0)return;
+  DB=nova;sortDB();cacheSalvar();updateSyncStatus();
   const abertos=DB.filter(p=>!isEntregue(p));
   const listaAtrasado=abertos.filter(p=>getStatus(p).key==='atrasado');
   const listaAgAp=abertos.filter(isAgAprovacao);
@@ -676,7 +741,7 @@ function mostrarNotificacaoLogin(){
   `;
   document.body.appendChild(div);
 }
-async function reloadData(){showLoading(true);try{DB=await apiList();sortDB();updateSyncStatus();renderDashboard();renderProjetos();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
+async function reloadData(){showLoading(true);try{const[d,pc]=await Promise.all([apiList(),apiPcpList()]);DB=d;PCP_DB=(pc||[]).filter(Boolean);sortDB();cacheSalvar();updateSyncStatus();renderDashboard();renderProjetos();if(pcpVisivel())renderPCP();showToast('Dados atualizados!');}catch(e){showToast('Erro: '+e.message);}showLoading(false);}
 function updateSyncStatus(){const el=document.getElementById('syncStatus');const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});el.textContent=`✓ sync ${now}`;}
 
 // Ordenação por prazo (não por id)
@@ -729,7 +794,8 @@ document.getElementById('mp-overlay').onclick=function(e){if(e.target===this)thi
 function abrirModal(alvo){
   if(alvo==='pcp_pendente'){
     const lista=PCP_DB.filter(r=>pcpStatus(r)==='pendente');
-    document.getElementById('mp-titulo').textContent='🏭 Fábrica sem lançamento ('+lista.length+')';
+    const dup=usuarioLogado==='Admin'?pcpDuplicados().length:0;
+    document.getElementById('mp-titulo').innerHTML='🏭 Fábrica sem lançamento ('+lista.length+')'+(dup?` <button class="btn btn-danger" style="font-size:11px;padding:3px 10px;margin-left:10px" onclick="pcpLimparDuplicados()">🧹 Limpar ${dup} repetida(s)</button>`:'');
     document.getElementById('mp-thead').innerHTML='<th>Cliente</th><th>Ambiente</th><th>Mês</th><th></th>';
     document.getElementById('mp-corpo').innerHTML=lista.length
       ?lista.map(r=>`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');showPage('pcp');setTimeout(()=>{document.getElementById('pcp-f-busca').value='${(r.cliente||'').replace(/'/g,"\\'")}';renderPCP();},120)"><td><b style="text-transform:capitalize">${r.cliente}</b></td><td style="text-transform:capitalize">${r.ambiente}</td><td>${r.mes||'—'}</td><td style="color:#fb923c;font-size:11px">⏳ aguarda início</td></tr>`).join('')
@@ -759,6 +825,7 @@ function renderDashboard(){
   const eok=entregues.filter(p=>getStatus(p).key==='entregue_ok').length;
   const eatr=entregues.filter(p=>getStatus(p).key==='entregue_atr').length;
   const pcpPend=PCP_DB.filter(r=>pcpStatus(r)==='pendente').length;
+  const confMes=conferenciasDoMes(mesDe(hojeLocal())).length;
 
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='';renderProjetos();},100)">
@@ -771,6 +838,8 @@ function renderDashboard(){
       <div class="stat-label">Atrasados</div><div class="stat-value red">${late}</div></div>
     <div class="stat-card clickable-teal" onclick="showPage('projetos');setTimeout(()=>{document.getElementById('filterStatus').value='ag_medicao';renderProjetos();abrirModal('ag_medicao');},120)">
       <div class="stat-label">📐 Ag. Medição</div><div class="stat-value teal">${agm}</div></div>
+    <div class="stat-card" style="cursor:pointer;border-color:rgba(168,85,247,.4)" onclick="abrirModalConferencias()">
+      <div class="stat-label">🎯 Conferências no mês (Mateus)</div><div class="stat-value" style="color:var(--purple)">${confMes}</div></div>
     <div class="stat-card" style="cursor:pointer" onclick="abrirModal('ag_aprovacao')">
       <div class="stat-label">🤝 Ag. Aprovação Cliente</div><div class="stat-value" style="color:var(--purple)">${agAp}</div></div>
     <div class="stat-card" style="cursor:pointer${pcpPend>0?';border-color:rgba(249,115,22,.4)':''}" onclick="abrirModal('pcp_pendente')">
@@ -934,101 +1003,143 @@ function typedRow(id,p,key,label,owner,type,placeholder){
   }
   return`<div class="step-row"><div class="step-label">${label}</div><div class="step-real">${input}</div></div>`;
 }
-// ══ CHECKLIST DE CONFERÊNCIA (Mateus) ═══════════════════════
-const CHECKLIST_CONFERENCIA=[
-  "Paredes e colunas (larguras e pé direito)",
-  "Portas, janelas e soleiras",
-  "Tampos ou móveis existentes que participam do projeto (altura, largura, profundidade, medida de portas/frentes ou gavetas)",
-  "Degraus ou desníveis de pisos e rodapé",
-  "Base de alvenaria",
-  "Tampos de granito/mármore ou outros (largura, profundidade, mão francesa)",
-  "Rodapés, rodateto e sancas",
-  "Pontos de energia elétrica",
-  "Caixas elétricas de disjuntores",
-  "Pontos de internet/TV/telefone/som",
-  "Localização do ar condicionado",
-  "Pontos de entrada d’água e registros",
-  "Pontos de tubulação de esgoto (sifão)",
-  "Sentido de abertura das esquadrias",
-  "Espaço e localização do cortineiro",
-  "Limites de acabamento em revestimento em parede/teto (cozinha, WC, sala)",
-  "Fotos frontais de cada parede do ambiente (fechadas e aberta) + fotos da planta do ambiente",
-  "Vídeo panorâmico descritivo do ambiente, explicando detalhes parede a parede",
-  "Foto e descrição de defeitos no ambiente (quebrados, riscos, manchas, etc.)",
-  "Medidas de elevador, escadas, portas e vãos",
-  "Verificar horários permitidos de trabalho",
-  "Registrar o tipo de parede (alvenaria, drywall ou gesso)",
-  "Portas de passagem: medida do vão, profundidade da alvenaria, altura e profundidade do rodapé do vão"
-];
-const CHECKLIST_CONFERENCIA_EXCECOES=[
-  "Ambiente sem piso, gesso e esquadrias",
-  "Faltando bancadas de mármore, granito ou outras",
-  "Não medir área úmida sem sifão instalado e torneira no banheiro"
-];
-function checklistConferenciaHTML(id,p){
-  const can=podeEditar('Mateus');
-  let obj={};
-  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
-  const semConf=!!obj.sem_conferencia;
-  const total=CHECKLIST_CONFERENCIA.length;
-  const feitos=CHECKLIST_CONFERENCIA.reduce((n,_,i)=>n+(obj[i+1]?1:0),0);
-  const completo=feitos===total;
-  const itens=CHECKLIST_CONFERENCIA.map((label,i)=>{
-    const k=i+1,checked=!!obj[k];
-    const trava=!can||semConf;
-    return`<label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.35;${trava?'cursor:default;opacity:.4':'cursor:pointer'};color:${checked?'var(--green)':'var(--text2)'}">
-      <input type="checkbox" ${checked?'checked':''} ${trava?'disabled':''} onclick="toggleChecklistItem(${id},${k})" style="width:14px;height:14px;margin-top:1px;flex-shrink:0;${trava?'':'cursor:pointer'}">
-      <span>${checked?'✅ ':''}${label}</span>
-    </label>`;
-  }).join('');
-  return`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:2px 0 12px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:11px;font-weight:600;color:var(--text2)">📋 Checklist de Conferência</span>
-      <span style="font-size:11px;font-weight:700;color:${completo&&!semConf?'var(--green)':'var(--text3)'}">${semConf?'—':`${feitos}/${total}${completo?' ✅':''}`}</span>
-    </div>
-
-    <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:${semConf?'#f97316':'var(--text2)'};${can?'cursor:pointer':'cursor:default'};margin-bottom:10px;padding:6px 8px;background:${semConf?'rgba(249,115,22,.1)':'transparent'};border-radius:6px">
-      <input type="checkbox" ${semConf?'checked':''} ${can?'':'disabled'} onclick="setChecklistSemConferencia(${id},this.checked)" style="width:14px;height:14px;${can?'cursor:pointer':''}">
-      🔧 Não houve conferência (móvel solto)
-    </label>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;${semConf?'opacity:.4':''}">${itens}</div>
-    <details style="margin-top:10px"><summary style="font-size:10px;color:var(--text3);cursor:pointer">Ambiente impróprio para medição</summary>
-      <div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.5">${CHECKLIST_CONFERENCIA_EXCECOES.map(t=>'• '+t).join('<br>')}</div>
-    </details>
-  </div>`;
+// ══ CONFERÊNCIA (Mateus) — registro com prazo de 1 dia + contagem mensal para meta ══
+// Regra:
+//  • Registro no mesmo dia da conferência → conta na meta do mês da conferência
+//  • Registro no dia seguinte (passou de 24h) → conta na meta do MÊS SEGUINTE
+//  • A partir do 2º dia → bloqueado; somente o Admin consegue lançar
+// Os dados ficam em medicao_real (data) + conf_checklist (JSON com o registro), colunas que já existem na planilha.
+const MESES_NOME=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function hojeLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function mesDe(iso){return iso?iso.slice(0,7):null;}
+function mesSeguinte(ym){let[y,m]=ym.split('-').map(Number);m++;if(m>12){m=1;y++;}return y+'-'+String(m).padStart(2,'0');}
+function nomeMes(ym){if(!ym)return'—';const[y,m]=ym.split('-');return MESES_NOME[+m-1]+'/'+y;}
+function diasEntre(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);}
+function confObj(p){try{return p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){return{};}}
+// Mês de meta em que a conferência conta (null = não conta)
+function confMesMeta(p){
+  const o=confObj(p);
+  if(o.registro&&o.registro.mes)return o.registro.mes;
+  if(o.sem_conferencia)return null;          // móvel solto (registros antigos) não conta
+  return p.medicao_real?mesDe(toISO(p.medicao_real)):null; // registros antigos: mês da data de conferência
 }
-async function toggleChecklistItem(id,k){
-  if(!podeEditar('Mateus'))return;
+function conferenciasDoMes(ym){return DB.filter(p=>confMesMeta(p)===ym);}
+function confJanela(dataConf){
+  // retorna {ok, tardio, bloqueado, msg}
+  const hoje=hojeLocal();
+  if(!dataConf)return{ok:false,msg:'Digite a data da conferência.'};
+  const d=diasEntre(dataConf,hoje);
+  if(d<0)return{ok:false,msg:'A data da conferência está no futuro.'};
+  if(d===0)return{ok:true,tardio:false};
+  if(d===1)return{ok:true,tardio:true};
+  return{ok:false,bloqueado:true,msg:'Prazo de registro encerrado (mais de 1 dia). Somente o Admin consegue lançar esta conferência.'};
+}
+function conferenciaMateusHTML(id,p){
+  const isAdmin=usuarioLogado==='Admin',isMateus=usuarioLogado==='Mateus';
+  const o=confObj(p),reg=o.registro||null;
+  const val=p.medicao_real?toISO(p.medicao_real):'';
+  const mesAtual=mesDe(hojeLocal());
+  const qtd=conferenciasDoMes(mesAtual).length;
+  const proxQtd=conferenciasDoMes(mesSeguinte(mesAtual)).length;
+  const contador=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:rgba(168,85,247,.08);border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--text2)">🎯 Conferências em ${nomeMes(mesAtual)}</span>
+      <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--purple)">${qtd}${proxQtd?` <span style="font-size:10px;font-weight:500;color:var(--text3)">(+${proxQtd} p/ ${nomeMes(mesSeguinte(mesAtual))})</span>`:''}</span>
+    </div>`;
+  let box;
+  if(val){
+    const mesMeta=confMesMeta(p);
+    const info=reg
+      ?(reg.tardio?`<span style="color:var(--yellow);font-size:11px">⏰ registro após 24h — conta em ${nomeMes(mesMeta)}</span>`:`<span style="color:var(--text3);font-size:11px">conta em ${nomeMes(mesMeta)}</span>`)
+      :(mesMeta?`<span style="color:var(--text3);font-size:11px">conta em ${nomeMes(mesMeta)}</span>`:'<span style="color:var(--text3);font-size:11px">sem conferência (móvel solto)</span>');
+    if(isAdmin){
+      box=`<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="date" id="conf_data_${id}" value="${val}" style="font-size:12px;padding:3px 6px;width:140px">
+          <input type="month" id="conf_mes_${id}" value="${mesMeta||mesDe(val)}" title="Mês da meta" style="font-size:12px;padding:3px 6px;width:130px">
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="registrarConferencia(${id})">💾 Salvar</button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="limparConferencia(${id})">✕ Limpar</button>
+        </div>
+        ${info}
+      </div>`;
+    }else{
+      box=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="color:var(--green);font-weight:600">✅ ${fmt(val)}</span>${info}</div>`;
+    }
+  }else if(isAdmin){
+    const hoje=hojeLocal();
+    box=`<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="date" id="conf_data_${id}" value="${hoje}" max="${hoje}" style="font-size:12px;padding:3px 6px;width:140px">
+        <input type="month" id="conf_mes_${id}" value="${mesDe(hoje)}" title="Mês da meta" style="font-size:12px;padding:3px 6px;width:130px">
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onclick="this.checked=false;registrarConferencia(${id})" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:var(--text3)">marcar conferido</span></label>
+    </div>`;
+  }else if(isMateus){
+    const hoje=hojeLocal(),ontem=addWorkdaysCal(hoje,-1);
+    box=`<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <input type="date" id="conf_data_${id}" value="${hoje}" min="${ontem}" max="${hoje}" style="font-size:12px;padding:3px 6px;width:140px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onclick="this.checked=false;registrarConferencia(${id})" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:var(--text3)">marcar conferido</span></label>
+      <span style="font-size:10px;color:var(--text3)">Registre em até 1 dia após a conferência</span>
+    </div>`;
+  }else{
+    box=`<span style="font-size:12px;color:var(--text3)">○ pendente <span style="opacity:.6">(Mateus)</span></span>`;
+  }
+  return contador+`<div class="step-row" style="align-items:flex-start"><div class="step-label">Conferido em</div><div class="step-real">${box}</div></div>`;
+}
+function addWorkdaysCal(iso,n){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+async function registrarConferencia(id){
+  const isAdmin=usuarioLogado==='Admin';
+  if(!isAdmin&&usuarioLogado!=='Mateus'){showToast('Somente o Mateus ou o Admin registram a conferência.');return;}
   const p=DB.find(x=>x.id==id);if(!p)return;
-  let obj={};
-  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
-  obj[k]=!obj[k];
-  await updateField(id,'conf_checklist',JSON.stringify(obj));
+  if(!isAdmin&&p.medicao_real){showToast('Conferência já registrada. Para corrigir, fale com o Admin.');return;}
+  const data=(document.getElementById('conf_data_'+id)||{}).value||'';
+  if(!data){showToast('Digite a data da conferência.');return;}
+  let mes,tardio=false;
+  if(isAdmin){
+    mes=(document.getElementById('conf_mes_'+id)||{}).value||mesDe(data);
+  }else{
+    const j=confJanela(data);
+    if(!j.ok){showToast(j.bloqueado?'🔒 '+j.msg:j.msg);return;}
+    tardio=j.tardio;
+    mes=tardio?mesSeguinte(mesDe(data)):mesDe(data);
+    const txt=tardio
+      ?`Conferência de ${fmt(data)} registrada após 24h.\nEla vai contar na meta de ${nomeMes(mes)}.\n\nConfirmar registro?`
+      :`Confirmar conferência em ${fmt(data)}?\nConta na meta de ${nomeMes(mes)}.`;
+    if(!confirm(txt))return;
+  }
+  const o=confObj(p);
+  o.registro={data,mes,tardio,por:usuarioLogado,em:new Date().toISOString()};
+  const patch={
+    medicao_real:data,
+    prev_executivo:addWorkdays(data,5),
+    prazo:p.prazo_dias?addWorkdays(data,p.prazo_dias):null,
+    conf_checklist:JSON.stringify(o)
+  };
+  await updateFields(id,patch);
+  showToast(`✅ Conferência registrada — conta em ${nomeMes(mes)}.`);
+}
+async function limparConferencia(id){
+  if(usuarioLogado!=='Admin')return;
+  const p=DB.find(x=>x.id==id);if(!p)return;
+  if(!confirm('Limpar o registro de conferência deste projeto?'))return;
+  const o=confObj(p);delete o.registro;
+  await updateFields(id,{medicao_real:null,prev_executivo:addWorkdays(p.prev_medicao,5),prazo:null,conf_checklist:JSON.stringify(o)});
+}
+function abrirModalConferencias(){
+  const ym=mesDe(hojeLocal());
+  const lista=conferenciasDoMes(ym).sort((a,b)=>(toISO(b.medicao_real)||'').localeCompare(toISO(a.medicao_real)||''));
+  document.getElementById('mp-titulo').textContent=`🎯 Conferências de ${nomeMes(ym)} (${lista.length})`;
+  document.getElementById('mp-thead').innerHTML='<th>Cliente</th><th>Ambiente</th><th>Conferido em</th><th>Registro</th>';
+  document.getElementById('mp-corpo').innerHTML=lista.length
+    ?lista.map(p=>{const r=confObj(p).registro;return`<tr style="cursor:pointer" onclick="document.getElementById('mp-overlay').classList.remove('aberto');openDetail(${p.id})"><td><b>${p.cliente}</b></td><td>${p.ambiente}</td><td style="font-family:monospace">${fmt(p.medicao_real)}</td><td style="font-size:11px;color:${r&&r.tardio?'var(--yellow)':'var(--text3)'}">${r?(r.tardio?'⏰ após 24h':'no prazo'):'—'}</td></tr>`;}).join('')
+    :'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text2)">Nenhuma conferência neste mês ainda.</td></tr>';
+  document.getElementById('mp-overlay').classList.add('aberto');
 }
 async function updateFields(id,patch){
   const p=DB.find(x=>x.id==id);if(!p)return;
-  showLoading(true);
-  try{const updated=await apiUpdate(id,patch);const idx=DB.findIndex(x=>x.id==id);if(idx!==-1)DB[idx]=updated;sortDB();openDetail(id);renderDashboard();renderProjetos();}
-  catch(e){showToast('Erro ao atualizar: '+e.message);}
-  showLoading(false);
-}
-async function setChecklistSemConferencia(id,val){
-  if(!podeEditar('Mateus'))return;
-  const p=DB.find(x=>x.id==id);if(!p)return;
-  let obj={};
-  try{obj=p.conf_checklist?JSON.parse(p.conf_checklist):{};}catch(e){obj={};}
-  obj.sem_conferencia=val;
-  const patch={conf_checklist:JSON.stringify(obj)};
-  const marcouAgora=val&&!p.medicao_real;
-  if(marcouAgora){
-    const hoje=today();
-    patch.medicao_real=hoje;
-    patch.prev_executivo=addWorkdays(hoje,5);
-    patch.prazo=p.prazo_dias?addWorkdays(hoje,p.prazo_dias):null;
-  }
-  await updateFields(id,patch);
-  if(marcouAgora)setTimeout(()=>showToast('Prazo iniciado automaticamente (móvel solto).'),200);
+  aplicarLocal(id,patch);
+  salvarEmSegundoPlano(()=>apiUpdate(id,patch));
 }
 function stepGroup(title,owner,rowsHtml){
   const cor=PESSOA_COR[Array.isArray(owner)?owner[0]:owner]||['139,144,168','#8b90a8'];
@@ -1078,7 +1189,7 @@ function openDetail(id){
     `+dateRow(id,p,'fechamento','Fechado em','Jean')+`</div>`+
     stepGroup('📅 Agendamento de Conferência',['Jean','Adriana'], dateRow(id,p,'medicao_agendada','Agendado em',['Jean','Adriana']))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
-    stepGroup('📐 Conferência / Medição','Mateus', stepRow(id,p,'medicao_real','Medição Real em','Mateus')+timeCheckRow(id,p,'medicao_hora_inicio','Hora Início','Mateus')+timeCheckRow(id,p,'medicao_hora_fim','Hora Término','Mateus')+stepRow(id,p,'pasta_cliente','Pasta Cliente','Mateus')+checklistConferenciaHTML(id,p))+
+    stepGroup('📐 Conferência','Mateus', conferenciaMateusHTML(id,p))+
     stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
     stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
     stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
@@ -1115,18 +1226,16 @@ async function updateField(id,key,val){
     // Auto-lançar no PCP se não existir
     pcpAutoLancar({...p,...patch,id});
   }
-  showLoading(true);
-  try{const updated=await apiUpdate(id,patch);const idx=DB.findIndex(x=>x.id==id);if(idx!==-1)DB[idx]=updated;sortDB();openDetail(id);renderDashboard();renderProjetos();}
-  catch(e){showToast('Erro ao atualizar: '+e.message);}
-  showLoading(false);
+  aplicarLocal(id,patch);
+  salvarEmSegundoPlano(()=>apiUpdate(id,patch));
 }
 
 // Auto-lançar no PCP quando o projeto é cadastrado (Jean) — entra como pendente aguardando início
 async function pcpAutoLancar(proj){
-  if(PCP_DB.find(r=>r.proj_id==proj.id))return;
+  if(pcpDoProjeto(proj))return;
   const item={proj_id:proj.id,cliente:(proj.cliente||'').toLowerCase(),ambiente:(proj.ambiente||'').toLowerCase(),
     mes:mesAtualLabel(),m2:null,ini_fab:null,ini_fab_hora:null,fim_fab:null,fim_fab_hora:null,prazo:toISO(proj.prazo)||null};
-  try{const created=await apiPcpCreate(item);PCP_DB.unshift(created);renderDashboard();if(document.getElementById('page-pcp').style.display!=='none')renderPCP();}
+  try{const created=await apiPcpCreate(item);if(created)PCP_DB.unshift(created);cacheSalvar();renderDashboard();if(document.getElementById('page-pcp').style.display!=='none')renderPCP();}
   catch(e){showToast('Erro ao lançar no PCP: '+e.message);}
 }
 function mesAtualLabel(){const ms=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const d=new Date();return ms[d.getMonth()]+' '+d.getFullYear();}
@@ -1134,7 +1243,7 @@ function mesAtualLabel(){const ms=['Janeiro','Fevereiro','Março','Abril','Maio'
 async function deletarProjeto(id){
   if(!confirm('Remover este projeto?'))return;
   showLoading(true);
-  try{await apiDelete(id);DB=DB.filter(x=>x.id!=id);PCP_DB=PCP_DB.filter(r=>r.proj_id!=id);pcpSave();closeDetail();renderProjetos();renderDashboard();showToast('Projeto removido.');}
+  try{await _fila;await apiDelete(id);const pcpDoProjeto=PCP_DB.filter(r=>r.proj_id==id);DB=DB.filter(x=>x.id!=id);PCP_DB=PCP_DB.filter(r=>r.proj_id!=id);cacheSalvar();pcpDoProjeto.forEach(r=>salvarEmSegundoPlano(()=>apiPcpDelete(r.id)));closeDetail();renderProjetos();renderDashboard();showToast('Projeto removido.');}
   catch(e){showToast('Erro ao remover: '+e.message);}
   showLoading(false);
 }
@@ -1217,27 +1326,24 @@ function renderPCP(){
 
 async function pcpSet(id,campo,valor){
   const r=PCP_DB.find(x=>x.id==id);if(!r)return;
-  showLoading(true);
-  try{const updated=await apiPcpUpdate(id,{[campo]:valor});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();}
-  catch(e){showToast('Erro ao salvar: '+e.message);}
-  showLoading(false);
+  const patch={[campo]:valor};
+  aplicarLocalPcp(id,patch);
+  salvarEmSegundoPlano(()=>apiPcpUpdate(id,patch));
 }
 async function pcpLancarData(id,campo,horaCampo,dataDigitada){
   if(usuarioLogado!=='Marlony'&&usuarioLogado!=='Admin')return;
   const r=PCP_DB.find(x=>x.id==id);if(!r||r[campo])return;
   const dataFinal=dataDigitada||today();
-  showLoading(true);
-  try{const updated=await apiPcpUpdate(id,{[campo]:dataFinal,[horaCampo]:nowTime()});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();renderDashboard();}
-  catch(e){showToast('Erro ao lançar: '+e.message);}
-  showLoading(false);
+  const patch={[campo]:dataFinal,[horaCampo]:nowTime()};
+  aplicarLocalPcp(id,patch);
+  salvarEmSegundoPlano(()=>apiPcpUpdate(id,patch));
 }
 async function pcpDesfazer(id,campo,horaCampo){
   if(usuarioLogado!=='Admin')return;
   const r=PCP_DB.find(x=>x.id==id);if(!r)return;
-  showLoading(true);
-  try{const updated=await apiPcpUpdate(id,{[campo]:null,[horaCampo]:null});const idx=PCP_DB.findIndex(x=>x.id==id);if(idx!==-1)PCP_DB[idx]=updated;renderPCP();renderDashboard();}
-  catch(e){showToast('Erro ao desfazer: '+e.message);}
-  showLoading(false);
+  const patch={[campo]:null,[horaCampo]:null};
+  aplicarLocalPcp(id,patch);
+  salvarEmSegundoPlano(()=>apiPcpUpdate(id,patch));
 }
 
 
@@ -1351,31 +1457,15 @@ async function confirmarLote(){
   if(!confirmar)return;
 
   fecharLote();
-  showLoading(true);
-
-  let ok=0,erros=0;
+  let ok=0;
   for(const id of ids){
-    const p=DB.find(x=>x.id==id);
-    if(!p){erros++;continue;}
+    const p=DB.find(x=>x.id==id);if(!p)continue;
     const patch={montagem_entregue:data};
-    // calcular se foi dentro ou fora do prazo
-    try{
-      const updated=await apiUpdate(id,patch);
-      const idx=DB.findIndex(x=>x.id==id);
-      if(idx!==-1)DB[idx]=updated;
-      ok++;
-    }catch(e){erros++;console.error('Erro ao atualizar',id,e);}
+    Object.assign(p,patch);ok++;
+    salvarEmSegundoPlano(()=>apiUpdate(id,patch));
   }
-
-  sortDB();
-  showLoading(false);
-  renderDashboard();
-  renderProjetos();
-
-  const msg=erros===0
-    ?`✅ ${ok} projeto${ok>1?'s':''} marcado${ok>1?'s':''} como entregue${ok>1?'s':''}!`
-    :`✅ ${ok} ok · ⚠️ ${erros} erro${erros>1?'s':''} — verifique a conexão`;
-  showToast(msg);
+  sortDB();cacheSalvar();renderDashboard();renderProjetos();
+  showToast(`✅ ${ok} projeto${ok>1?'s':''} marcado${ok>1?'s':''} como entregue${ok>1?'s':''} — salvando na planilha…`);
 }
 
 // ══ NAVEGAÇÃO ═════════════════════════════════════════════
