@@ -1190,19 +1190,8 @@ function openDetail(id){
     stepGroup('📅 Agendamento de Conferência',['Jean','Adriana'], dateRow(id,p,'medicao_agendada','Agendado em',['Jean','Adriana']))+
     (p.prazo_retorno_conf&&!p.medicao_real?(()=>{const diffRet=diffDays(p.prazo_retorno_conf);const atrasado=diffRet<0,proximo=diffRet<=1;return atrasado||proximo?`<div style="padding:8px 14px;border-radius:8px;margin:-6px 0 12px;font-size:12px;font-weight:500;${atrasado?'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)':'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--yellow)'}">${atrasado?`🔴 Prazo de retorno da conferência vencido há ${Math.abs(diffRet)} dia(s).`:`🟡 Prazo de retorno da conferência vence em ${diffRet} dia(s).`}</div>`:'';})():'')+
     stepGroup('📐 Conferência','Mateus', conferenciaMateusHTML(id,p))+
-    stepGroup('📋 Recebimento Executivo','Lucas', stepRow(id,p,'exec_pegou','Peguei','Lucas')+stepRow(id,p,'ag_aprov_cliente','Ag. Aprov. Cliente','Lucas'))+
-    stepGroup('🤝 Aprovação do Cliente','Jean', stepRow(id,p,'aprovacao_enviou','Enviado para cliente','Jean')+stepRow(id,p,'em_analise','Em análise','Jean')+stepRow(id,p,'aprovacao_cliente','Aprovado','Jean'))+
-    stepGroup('🛠 Ajuste Executivo','Lucas', stepRow(id,p,'enviado_ajustado','Enviado para Ajustado','Lucas')+stepRow(id,p,'precisou_alteracao','Precisou Alteração','Lucas')+stepRow(id,p,'finalizado_alteracao','Finalizado Alteração','Lucas'))+
-    stepGroup('🏭 PCP — Ajuste','Marlony', stepRow(id,p,'marlony_inicio_ajuste','Início Ajuste','Marlony')+stepRow(id,p,'enviado_de_volta','Enviado de Volta','Marlony')+stepRow(id,p,'conferido','Conferido','Marlony')+typedRow(id,p,'pacote_ref','Referência do Pacote','Marlony','text','Ex: PACOTE 0107'))+
-    stepGroup('🚚 Recebimento e Agenda','Adriana', stepRow(id,p,'disp_adriana','Recebido Fábrica','Adriana')+dateRow(id,p,'agenda_entrega','Agendado Para (Montagem)','Adriana'))+
-    stepGroup('📣 Apresentação','Jean', stepRow(id,p,'apresentado_equipe','Apresentado Equipe','Jean'))+
-    stepGroup('🔧 Montagem','Helder', stepRow(id,p,'montado_em','Montado em','Helder')+typedRow(id,p,'equipe','Equipe','Helder','text','Ex: Tadeu e Lucas')+stepRow(id,p,'montagem_entregue','Checklist Finalizado','Helder'))+
-    `<div class="detail-section ds-fluxo" style="margin-bottom:12px"><div class="detail-section-header">⏱ Fluxo de Tempo</div>
-    <div class="step-row"><div class="step-label">Dias no Executivo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.exec_pegou,p.aprovacao_cliente)??'—'}</span></div>
-    <div class="step-row"><div class="step-label">Dias no Ajuste (PCP)</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.marlony_inicio_ajuste,p.conferido)??'—'}</span></div>
-    <div class="step-row"><div class="step-label">Dias totais no fluxo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600">${networkDays(p.fechamento,today())??'—'}</span></div>
-    <div class="step-row"><div class="step-label">Dias até o prazo</div><span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${diff!==null&&diff<0?'var(--red)':diff!==null&&diff<=10?'var(--yellow)':'var(--green)'}">${diff??'—'}</span></div></div>
-    <div style="padding:12px 0;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-danger" onclick="deletarProjeto(${id})">🗑 Remover Projeto</button></div>`;
+    stepGroup('🔧 Montagem',['Helder','Adriana'], dateRow(id,p,'agenda_entrega','Agendado Para (Montagem)','Adriana')+stepRow(id,p,'montado_em','Montado em','Helder')+typedRow(id,p,'equipe','Equipe','Helder','text','Ex: Tadeu e Lucas')+stepRow(id,p,'montagem_entregue','Checklist Finalizado','Helder'))+
+    `<div style="padding:12px 0;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-danger" onclick="deletarProjeto(${id})">🗑 Remover Projeto</button></div>`;
   document.getElementById('detailPanel').classList.add('open');
 }
 function closeDetail(){document.getElementById('detailPanel').classList.remove('open');}
